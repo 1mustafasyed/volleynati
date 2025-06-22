@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -27,16 +28,11 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
             Volleynati 2025
           </h1>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8 py-3" asChild>
-              <a href="https://lu.ma" target="_blank" rel="noopener noreferrer">
-                Register Now
-              </a>
-            </Button>
-            <Button size="lg" className="text-lg px-8 py-3" asChild>
-              <a href="/learn-more">
-                Learn More
-              </a>
+          <div className="flex justify-center">
+            <Button size="lg" className="text-lg px-8 py-3 hover:bg-gray-200" asChild>
+              <Link href="/main-menu">
+                Enter
+              </Link>
             </Button>
           </div>
         </div>
