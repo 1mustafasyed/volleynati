@@ -29,8 +29,8 @@ export default function Home() {
           </h1>
           <div className="flex justify-center">
             <Button size="lg" className="text-lg px-8 py-3 hover:bg-gray-200" asChild>
-              <Link href="/main-menu">
-                Enter
+              <Link href="/landing">
+                Landing
               </Link>
             </Button>
           </div>
