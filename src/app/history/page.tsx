@@ -91,13 +91,13 @@ export default function HistoryPage() {
             <div className="mb-8">
               <div className="bg-white rounded-lg p-4 border border-gray-200 inline-block mb-4">
                 <h4 className="text-xl font-bold text-gray-800">2024 Champions</h4>
-                <p className="text-lg text-gray-600">Hugo's Little Munchkins</p>
+                <p className="text-lg text-gray-600">Hugo&apos;s Little Munchkins</p>
               </div>
               <div className="w-full max-w-2xl mx-auto">
                 <div className="bg-gray-100 rounded-lg overflow-hidden">
                   <Image
                     src="/history/2024-champions.png"
-                    alt="2024 Champions - Hugo's Little Munchkins"
+                    alt="2024 Champions - Hugo&apos;s Little Munchkins"
                     width={800}
                     height={600}
                     className="w-full h-auto object-contain"
@@ -128,7 +128,7 @@ export default function HistoryPage() {
           
           <div className="mt-12 text-center">
             <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto">
-              As we approach Volleynati 2025, we're excited to welcome 20 teams for our biggest tournament yet. The legacy continues to grow, and we can&apos;t wait to see what new memories and champions this year will bring.
+              As we approach Volleynati 2025, we&apos;re excited to welcome 20 teams for our biggest tournament yet. The legacy continues to grow, and we can&apos;t wait to see what new memories and champions this year will bring.
             </p>
           </div>
         </div>

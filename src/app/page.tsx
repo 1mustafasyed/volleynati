@@ -13,7 +13,7 @@ export default function Home() {
         className="absolute inset-0 w-full h-full object-cover z-0"
       >
         <source src="/b-roll-video.mp4" type="video/mp4" />
-        {/* Fallback for browsers that don't support video */}
+        {/* Fallback for browsers that don&apos;t support video */}
         Your browser does not support the video tag.
       </video>
       
