@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -30,7 +29,7 @@ export default function Home() {
           <div className="flex justify-center">
             <Button size="lg" className="text-lg px-8 py-3 hover:bg-gray-200" asChild>
               <Link href="/landing">
-                Landing
+                Enter
               </Link>
             </Button>
           </div>
