@@ -67,7 +67,7 @@ export default function SponsorsPage() {
           */}
 
           <div className="mt-12">
-            <Button size="lg" className="text-lg px-8 py-3 bg-gray-600 hover:bg-blue-700" asChild>
+            <Button size="lg" className="text-lg px-8 py-3 bg-blue-600 hover:bg-blue-700" asChild>
               <Link href="https://docs.google.com/forms/d/e/1FAIpQLSfzNgEyqg9OYsOiurgfe0m20dNzP0iHym0P7iM_mBT3bHcTRQ/viewform?usp=header" target="_blank" rel="noopener noreferrer">
                 Interested in Sponsoring?
               </Link>
