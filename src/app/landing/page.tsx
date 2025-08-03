@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import SupabaseExample from "@/components/SupabaseExample";
 
 export default function LandingPage() {
   return (
@@ -125,6 +126,13 @@ export default function LandingPage() {
           <p className="text-lg text-gray-700 leading-relaxed mb-2">
             🗓️ Registration Deadline: July 18th, 2025
           </p>
+        </div>
+      </section>
+
+      {/* Supabase Test Section */}
+      <section className="py-8 px-4 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <SupabaseExample />
         </div>
       </section>
 
