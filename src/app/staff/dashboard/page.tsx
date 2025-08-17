@@ -1,0 +1,103 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+
+export default function StaffDashboardPage() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!supabase) {
+        router.push("/staff/login");
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push("/staff/login");
+        return;
+      }
+
+      setUser(user);
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [router]);
+
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+      router.push("/staff/login");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white text-black">
+      {/* Header */}
+      <div className="bg-blue-600 text-white p-4">
+        <div className="max-w-2xl mx-auto flex justify-between items-center">
+          <h1 className="text-xl font-bold">Staff Dashboard</h1>
+          <div className="flex flex-col items-end space-y-2">
+            <span className="text-sm">Welcome, {user?.email}</span>
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+              className="bg-white text-blue-600 hover:bg-gray-100"
+            >
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Scorekeeping Card */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h3 className="text-xl font-semibold mb-4">Scorekeeping</h3>
+            <p className="text-gray-600 mb-4">
+              Update game scores and manage tournament progress.
+            </p>
+            <Button asChild className="w-full">
+              <Link href="/staff/scorekeeping">
+                Manage Scores
+              </Link>
+            </Button>
+          </div>
+
+          {/* Tournament Management Card */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h3 className="text-xl font-semibold mb-4">Tournament Management</h3>
+            <p className="text-gray-600 mb-4">
+              Manage teams, brackets, and tournament settings.
+            </p>
+            <Button asChild className="w-full">
+              <Link href="/staff/tournament">
+                Manage Tournament
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

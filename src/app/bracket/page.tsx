@@ -17,14 +17,31 @@ interface Game {
   start_time_formatted: string;
   game_type: string;
   bracket_id: number | null;
+  group_name: string | null;
   updated_by: string | null;
   updated_at: string;
+}
+
+interface TeamStanding {
+  team_id: string;
+  team_name: string;
+  group_name: string;
+  wins: number;
+  losses: number;
+  points_scored: number;
+  points_allowed: number;
+  point_differential: number;
+  games_played: number;
 }
 
 export default function BracketPage() {
   const [activeTab, setActiveTab] = useState("Games");
   const [games, setGames] = useState<Game[]>([]);
+  const [filteredGames, setFilteredGames] = useState<Game[]>([]);
+  const [standings, setStandings] = useState<TeamStanding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [availableGroups, setAvailableGroups] = useState<string[]>([]);
 
   const tabs = [
     { id: "Games", label: "Games" },
@@ -55,6 +72,105 @@ export default function BracketPage() {
       team1_name: game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`,
       team2_name: game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`
     }));
+  };
+
+  // Filter games based on selected group
+  useEffect(() => {
+    if (selectedGroup === "all") {
+      setFilteredGames(games);
+    } else {
+      setFilteredGames(games.filter(game => game.group_name === selectedGroup));
+    }
+  }, [games, selectedGroup]);
+
+  // Calculate team standings
+  const calculateStandings = (games: Game[]) => {
+    const teamStats: { [key: string]: TeamStanding } = {};
+
+    // Initialize team stats from teams table data
+    games.forEach(game => {
+      if (game.team1_name && game.team2_name) {
+        // Initialize team1 if not exists
+        if (!teamStats[game.team1_id]) {
+          teamStats[game.team1_id] = {
+            team_id: game.team1_id,
+            team_name: game.team1_name,
+            group_name: game.group_name || 'Unknown',
+            wins: 0,
+            losses: 0,
+            points_scored: 0,
+            points_allowed: 0,
+            point_differential: 0,
+            games_played: 0
+          };
+        }
+
+        // Initialize team2 if not exists
+        if (!teamStats[game.team2_id]) {
+          teamStats[game.team2_id] = {
+            team_id: game.team2_id,
+            team_name: game.team2_name,
+            group_name: game.group_name || 'Unknown',
+            wins: 0,
+            losses: 0,
+            points_scored: 0,
+            points_allowed: 0,
+            point_differential: 0,
+            games_played: 0
+          };
+        }
+
+        // Update stats for all games (not just completed ones)
+        const team1 = teamStats[game.team1_id];
+        const team2 = teamStats[game.team2_id];
+
+        // Update points
+        team1.points_scored += game.score1;
+        team1.points_allowed += game.score2;
+        team2.points_scored += game.score2;
+        team2.points_allowed += game.score1;
+
+        // Update wins/losses only for completed games
+        if (game.status === 'Completed') {
+          if (game.score1 > game.score2) {
+            team1.wins += 1;
+            team2.losses += 1;
+          } else {
+            team2.wins += 1;
+            team1.losses += 1;
+          }
+        }
+
+        // Update games played for all games
+        team1.games_played += 1;
+        team2.games_played += 1;
+      }
+    });
+
+    // Calculate point differentials
+    Object.values(teamStats).forEach(team => {
+      team.point_differential = team.points_scored - team.points_allowed;
+    });
+
+    // Convert to array and sort by ranking criteria
+    const standingsArray = Object.values(teamStats).sort((a, b) => {
+      // First: Wins (descending)
+      if (a.wins !== b.wins) {
+        return b.wins - a.wins;
+      }
+      // Second: Point differential (descending)
+      if (a.point_differential !== b.point_differential) {
+        return b.point_differential - a.point_differential;
+      }
+      // Third: Points scored (descending)
+      if (a.points_scored !== b.points_scored) {
+        return b.points_scored - a.points_scored;
+      }
+      // Finally: Team name (alphabetical)
+      return a.team_name.localeCompare(b.team_name);
+    });
+
+    return standingsArray;
   };
 
   // Fetch games from Supabase
@@ -110,6 +226,22 @@ export default function BracketPage() {
           console.log('Transformed games:', transformedGames);
           console.log('Transformed games length:', transformedGames.length);
           setGames(transformedGames);
+          
+          // Calculate standings from the games data
+          const calculatedStandings = calculateStandings(transformedGames);
+          setStandings(calculatedStandings);
+          
+          // Debug: Check what groups we're getting
+          console.log('Available groups from games:', [...new Set(transformedGames.map(game => game.group_name))]);
+          console.log('Standings calculated:', calculatedStandings);
+          console.log('Teams per group:', calculatedStandings.reduce((acc, team) => {
+            acc[team.group_name] = (acc[team.group_name] || 0) + 1;
+            return acc;
+          }, {} as { [key: string]: number }));
+          
+          // Extract unique groups from the view for the filter dropdown
+          const groups = [...new Set(transformedGames.map(game => game.group_name))].sort();
+          setAvailableGroups(groups);
         }
       } catch (error) {
         console.error('Error fetching games:', error);
@@ -163,11 +295,45 @@ export default function BracketPage() {
                     </div>
                   ) : (
                     <div>
+                      {/* Group Filter */}
+                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                          <div className="flex items-center gap-3">
+                            <label htmlFor="group-filter" className="text-sm font-semibold text-blue-900">
+                              Filter by Group:
+                            </label>
+                            <select
+                              id="group-filter"
+                              value={selectedGroup}
+                              onChange={(e) => setSelectedGroup(e.target.value)}
+                              className="px-4 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+                            >
+                              <option value="all">All Groups</option>
+                              {availableGroups.map((group) => (
+                                <option key={group} value={group}>
+                                  {group}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-blue-700 font-medium">
+                              {filteredGames.length} of {games.length} games
+                            </span>
+                            {selectedGroup !== "all" && (
+                              <span className="text-xs text-blue-600 bg-blue-200 px-2 py-1 rounded-full">
+                                {selectedGroup}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="mb-4 text-center">
-                        <p className="text-sm text-gray-600">Found {games.length} games</p>
+                        <p className="text-sm text-gray-600">Found {filteredGames.length} games</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {games.map((game_with_teams) => (
+                        {filteredGames.map((game_with_teams) => (
                           <div
                             key={game_with_teams.id}
                             className="bg-gray-100 border border-gray-400 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
@@ -213,6 +379,13 @@ export default function BracketPage() {
                                 </span>
                               </div>
                             </div>
+
+                            {/* Group Name */}
+                            <div className="mt-3 pt-3 border-t border-gray-300">
+                              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                {game_with_teams.group_name || 'Group Unknown'}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -225,9 +398,108 @@ export default function BracketPage() {
             {activeTab === "Standings" && (
               <div className="space-y-6">
                 <h2 className="text-3xl font-bold text-gray-900">Tournament Standings</h2>
-                <div className="bg-gray-50 rounded-lg p-8 text-center">
-                  <p className="text-gray-500">Standings interface coming soon...</p>
-                </div>
+                
+                {loading ? (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <p className="text-gray-500">Loading standings...</p>
+                  </div>
+                ) : standings.length === 0 ? (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <p className="text-gray-500">No standings available yet</p>
+                    <p className="text-sm text-gray-400 mt-2">Complete some games to see standings</p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Group Standings */}
+                    {availableGroups.map((groupName) => {
+                      const groupStandings = standings.filter(team => team.group_name === groupName);
+                      
+                      if (groupStandings.length === 0) return null;
+                      
+                      return (
+                        <div key={groupName} className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                          <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                            <h3 className="text-xl font-bold">{groupName}</h3>
+                            <p className="text-sm opacity-90">
+                              {groupStandings.length} teams
+                              {groupStandings.length !== 5 && (
+                                <span className="ml-2 text-yellow-200">
+                                  (Expected: 5 teams)
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Rank
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Team
+                                  </th>
+                                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    W
+                                  </th>
+                                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    L
+                                  </th>
+                                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    GP
+                                  </th>
+                                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    PF
+                                  </th>
+                                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    PA
+                                  </th>
+                                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Diff
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {groupStandings.map((team, index) => (
+                                  <tr key={team.team_id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                      {index + 1}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                      {team.team_name}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
+                                      {team.wins}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
+                                      {team.losses}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                                      {team.games_played}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
+                                      {team.points_scored}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 font-medium">
+                                      {team.points_allowed}
+                                    </td>
+                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-center font-medium ${
+                                      team.point_differential > 0 ? 'text-green-600' : 
+                                      team.point_differential < 0 ? 'text-red-600' : 'text-gray-900'
+                                    }`}>
+                                      {team.point_differential > 0 ? '+' : ''}{team.point_differential}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
