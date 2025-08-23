@@ -70,9 +70,9 @@ export default function StaffDashboardPage() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex justify-center">
           {/* Scorekeeping Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm max-w-md">
             <h3 className="text-xl font-semibold mb-4">Scorekeeping</h3>
             <p className="text-gray-600 mb-4">
               Update game scores and manage tournament progress.
@@ -80,19 +80,6 @@ export default function StaffDashboardPage() {
             <Button asChild className="w-full">
               <Link href="/staff/scorekeeping">
                 Manage Scores
-              </Link>
-            </Button>
-          </div>
-
-          {/* Tournament Management Card */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h3 className="text-xl font-semibold mb-4">Tournament Management</h3>
-            <p className="text-gray-600 mb-4">
-              Manage teams, brackets, and tournament settings.
-            </p>
-            <Button asChild className="w-full">
-              <Link href="/staff/tournament">
-                Manage Tournament
               </Link>
             </Button>
           </div>

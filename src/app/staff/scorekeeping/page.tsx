@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 interface Game {
   id: string;
-  game_id?: string;
+  game_id: string;
   team1_id: string;
   team2_id: string;
   team1_name: string | null;
@@ -231,8 +231,8 @@ export default function ScorekeepingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGames.map((game) => (
               <Link
-                key={game.id}
-                href={`/staff/scorekeeping/${game.id}`}
+                key={game.game_id || game.id}
+                href={`/staff/scorekeeping/${game.game_id || game.id}`}
                 className="block"
               >
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer">

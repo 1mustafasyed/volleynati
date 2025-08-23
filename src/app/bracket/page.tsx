@@ -16,7 +16,8 @@ interface Game {
   start_time: string | null;
   start_time_formatted: string;
   game_type: string;
-  bracket_id: number | null;
+  bracket_id: string | null;
+  bracket_name: string | null;
   group_name: string | null;
   updated_by: string | null;
   updated_at: string;
@@ -83,42 +84,54 @@ export default function BracketPage() {
     }
   }, [games, selectedGroup]);
 
+  // Organize games by bracket rounds
+  const organizeBracketGames = (games: Game[]) => {
+    const bracketGames = {
+      groupStage: games.filter(game => game.bracket_name === 'Group Stage'),
+      playIn: games.filter(game => game.bracket_name === 'Play-In'),
+      quarterFinal: games.filter(game => game.bracket_name === 'Quarterfinal'),
+      semiFinal: games.filter(game => game.bracket_name === 'Semifinal'),
+      final: games.filter(game => game.bracket_name === 'Final')
+    };
+    return bracketGames;
+  };
+
   // Calculate team standings
   const calculateStandings = (games: Game[]) => {
     const teamStats: { [key: string]: TeamStanding } = {};
 
-    // Initialize team stats from teams table data
-    games.forEach(game => {
-      if (game.team1_name && game.team2_name) {
-        // Initialize team1 if not exists
-        if (!teamStats[game.team1_id]) {
-          teamStats[game.team1_id] = {
-            team_id: game.team1_id,
-            team_name: game.team1_name,
-            group_name: game.group_name || 'Unknown',
-            wins: 0,
-            losses: 0,
-            points_scored: 0,
-            points_allowed: 0,
-            point_differential: 0,
-            games_played: 0
-          };
-        }
-
-        // Initialize team2 if not exists
-        if (!teamStats[game.team2_id]) {
-          teamStats[game.team2_id] = {
-            team_id: game.team2_id,
-            team_name: game.team2_name,
-            group_name: game.group_name || 'Unknown',
-            wins: 0,
-            losses: 0,
-            points_scored: 0,
-            points_allowed: 0,
-            point_differential: 0,
-            games_played: 0
-          };
-        }
+          // Initialize team stats from teams table data
+      games.forEach(game => {
+        if (game.team1_name && game.team2_name) {
+          // Initialize team1 if not exists
+          if (!teamStats[game.team1_id]) {
+            teamStats[game.team1_id] = {
+              team_id: game.team1_id,
+              team_name: game.team1_name,
+              group_name: game.group_name || 'Unknown',
+              wins: 0,
+              losses: 0,
+              points_scored: 0,
+              points_allowed: 0,
+              point_differential: 0,
+              games_played: 0
+            };
+          }
+          
+          // Initialize team2 if not exists
+          if (!teamStats[game.team2_id]) {
+            teamStats[game.team2_id] = {
+              team_id: game.team2_id,
+              team_name: game.team2_name,
+              group_name: game.group_name || 'Unknown',
+              wins: 0,
+              losses: 0,
+              points_scored: 0,
+              points_allowed: 0,
+              point_differential: 0,
+              games_played: 0
+            };
+          }
 
         // Update stats for all games (not just completed ones)
         const team1 = teamStats[game.team1_id];
@@ -422,11 +435,6 @@ export default function BracketPage() {
                             <h3 className="text-xl font-bold">{groupName}</h3>
                             <p className="text-sm opacity-90">
                               {groupStandings.length} teams
-                              {groupStandings.length !== 5 && (
-                                <span className="ml-2 text-yellow-200">
-                                  (Expected: 5 teams)
-                                </span>
-                              )}
                             </p>
                           </div>
                           
@@ -462,7 +470,9 @@ export default function BracketPage() {
                               </thead>
                               <tbody className="bg-white divide-y divide-gray-200">
                                 {groupStandings.map((team, index) => (
-                                  <tr key={team.team_id} className="hover:bg-gray-50">
+                                  <tr key={team.team_id} className={`hover:bg-gray-50 ${
+                                    index < 3 ? 'bg-green-100' : ''
+                                  }`}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                       {index + 1}
                                     </td>
@@ -506,9 +516,164 @@ export default function BracketPage() {
             {activeTab === "Bracket" && (
               <div className="space-y-6">
                 <h2 className="text-3xl font-bold text-gray-900">Tournament Bracket</h2>
-                <div className="bg-gray-50 rounded-lg p-8 text-center">
-                  <p className="text-gray-500">Bracket interface coming soon...</p>
-                </div>
+                
+                {loading ? (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <p className="text-gray-500">Loading bracket...</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                    {/* Bracket Header */}
+                    <div className="text-center mb-8">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">Single Elimination Tournament</h3>
+                      <p className="text-sm text-gray-600">12 Teams • Top 4 from each group get bye • 4 Rounds</p>
+                    </div>
+
+                    {/* Bracket Container */}
+                    <div className="flex justify-between items-start space-x-8 overflow-x-auto pb-4">
+                      {/* Round 1 - 4 Games (Play-in Games) */}
+                      <div className="flex flex-col space-y-4 min-w-[280px]">
+                        <div className="text-center mb-4">
+                          <h4 className="text-lg font-semibold text-orange-600">Play-in</h4>
+                        </div>
+                        
+                        {/* 4 play-in games */}
+                        <div className="space-y-4">
+                          {organizeBracketGames(games).playIn.length > 0 ? (
+                            organizeBracketGames(games).playIn.map((game, index) => (
+                              <div key={`r1-${game.id}`} className="bg-orange-50 rounded-lg border border-orange-200 p-4 min-h-[80px] flex flex-col justify-center">
+                                <div className="text-xs text-orange-600 mb-2">Play-in Game {index + 1}</div>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-900">
+                                      {game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`}
+                                    </span>
+                                    <span className="text-sm font-bold text-blue-600">
+                                      {game.score1}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-900">
+                                      {game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`}
+                                    </span>
+                                    <span className="text-sm font-bold text-blue-600">
+                                      {game.score2}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="bg-orange-50 rounded-lg border border-orange-200 p-4 min-h-[80px] flex flex-col justify-center">
+                              <div className="text-xs text-orange-600 mb-2">No Play-in Games Yet</div>
+                              <div className="text-sm text-gray-500 text-center">Games will appear here when bracket play begins</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Round 2 - 4 Games (Top 4 from groups vs Play-in winners) */}
+                      <div className="flex flex-col space-y-4 min-w-[280px]">
+                        <div className="text-center mb-4">
+                          <h4 className="text-lg font-semibold text-blue-600">Quarter Finals</h4>
+                        </div>
+                        
+                        {/* 4 games (top seeds vs play-in winners) */}
+                        <div className="space-y-4">
+                          {organizeBracketGames(games).quarterFinal.map((game, index) => (
+                            <div key={`r2-${game.id}`} className="bg-blue-50 rounded-lg border border-blue-200 p-4 min-h-[80px] flex flex-col justify-center">
+                              <div className="text-xs text-blue-500 mb-2">Game {index + 1}</div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`}
+                                  </span>
+                                  <span className="text-sm font-bold text-blue-600">
+                                    {game.score1}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`}
+                                  </span>
+                                  <span className="text-sm font-bold text-blue-600">
+                                    {game.score2}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Round 3 - 2 Games (Semi Finals) */}
+                      <div className="flex flex-col space-y-4 min-w-[280px]">
+                        <div className="text-center mb-4">
+                          <h4 className="text-lg font-semibold text-green-600">Semi Finals</h4>
+                        </div>
+                        
+                        {/* Semi Finals */}
+                        <div className="space-y-4">
+                          {organizeBracketGames(games).semiFinal.map((game, index) => (
+                            <div key={`r3-${game.id}`} className="bg-green-50 rounded-lg border border-green-200 p-4 min-h-[80px] flex flex-col justify-center">
+                              <div className="text-xs text-green-500 mb-2">Semi Final {index + 1}</div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`}
+                                  </span>
+                                  <span className="text-sm font-bold text-blue-600">
+                                    {game.score1}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`}
+                                  </span>
+                                  <span className="text-sm font-bold text-blue-600">
+                                    {game.score2}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Championship */}
+                      <div className="flex flex-col space-y-4 min-w-[280px]">
+                        <div className="text-center mb-4">
+                          <h4 className="text-lg font-semibold text-red-600">Championship</h4>
+                        </div>
+                        
+                        {organizeBracketGames(games).final.map((game, index) => (
+                          <div key={`championship-${game.id}`} className="bg-red-50 rounded-lg border border-red-200 p-4 min-h-[80px] flex flex-col justify-center">
+                            <div className="text-xs text-red-500 mb-2">Championship Game</div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`}
+                                </span>
+                                <span className="text-sm font-bold text-blue-600">
+                                  {game.score1}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`}
+                                </span>
+                                <span className="text-sm font-bold text-blue-600">
+                                  {game.score2}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                )}
               </div>
             )}
           </div>

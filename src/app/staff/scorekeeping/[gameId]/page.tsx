@@ -29,6 +29,7 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showEndGameConfirmation, setShowEndGameConfirmation] = useState(false);
   const [scoreHistory, setScoreHistory] = useState<Array<{team: 'team1' | 'team2', previousScore: number, newScore: number}>>([]);
   const router = useRouter();
 
@@ -83,11 +84,11 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
       if (!supabase) return;
 
       try {
-        // Try to find the game using the ID from the URL
+        // Try to find the game using the game_id from the URL
         const { data, error } = await supabase
           .from('game_with_teams')
           .select('*')
-          .eq('id', params.gameId)
+          .eq('game_id', params.gameId)
           .single();
 
         if (error) {
@@ -205,8 +206,13 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
     }
   };
 
-  // End the game
-  const endGame = async () => {
+  // Show end game confirmation
+  const handleEndGameClick = () => {
+    setShowEndGameConfirmation(true);
+  };
+
+  // Actually end the game (after confirmation)
+  const confirmEndGame = async () => {
     if (!supabase || !game) return;
 
     setUpdating(true);
@@ -214,17 +220,26 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
     try {
       const gameIdToUpdate = game.game_id || game.id;
       
-      const { error } = await supabase
+      console.log('🔍 Debug: About to update game with ID:', gameIdToUpdate);
+      console.log('🔍 Debug: Current game object:', game);
+      console.log('🔍 Debug: Using game_id or id:', game.game_id ? 'game_id' : 'id');
+      
+      const { error, data } = await supabase
         .from('games')
         .update({ 
           status: 'Completed',
           updated_at: new Date().toISOString()
         })
-        .eq('id', gameIdToUpdate);
+        .eq('id', gameIdToUpdate)
+        .select(); // Add select to see what was updated
+
+      console.log('🔍 Debug: Supabase update response:', { error, data });
 
       if (error) {
-        console.error('Error ending game:', error);
+        console.error('❌ Error ending game:', error);
       } else {
+        console.log('✅ Game updated successfully:', data);
+        
         // Update local state
         setGame(prevGame => 
           prevGame ? {
@@ -237,10 +252,16 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
         window.location.href = '/staff/scorekeeping';
       }
     } catch (error) {
-      console.error('Error ending game:', error);
+      console.error('❌ Error ending game:', error);
     } finally {
       setUpdating(false);
+      setShowEndGameConfirmation(false);
     }
+  };
+
+  // Cancel end game confirmation
+  const cancelEndGame = () => {
+    setShowEndGameConfirmation(false);
   };
 
   if (loading) {
@@ -341,13 +362,43 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
           </button>
           
           <button
-            onClick={() => endGame()}
+            onClick={() => handleEndGameClick()}
             disabled={updating}
             className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg transition-colors"
           >
             End Game
           </button>
         </div>
+
+        {/* End Game Confirmation Dialog */}
+        {showEndGameConfirmation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                End Game Confirmation
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to end this game? This action cannot be undone and will mark the game as completed.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={cancelEndGame}
+                  disabled={updating}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmEndGame}
+                  disabled={updating}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                >
+                  {updating ? 'Ending...' : 'Yes, End Game'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
