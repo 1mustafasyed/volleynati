@@ -50,11 +50,27 @@ export default function BracketPage() {
     { id: "Bracket", label: "Bracket" }
   ];
 
-  // Transform timestamp to 12-hour format
+  // Transform timestamp to 12-hour format with date
   const formatStartTime = (timestamp: string) => {
     try {
       const date = new Date(timestamp);
-      return date.toLocaleTimeString('en-US', {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      let datePrefix = '';
+      if (date.toDateString() === today.toDateString()) {
+        datePrefix = 'Today, ';
+      } else if (date.toDateString() === tomorrow.toDateString()) {
+        datePrefix = 'Tomorrow, ';
+      } else {
+        datePrefix = date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        }) + ', ';
+      }
+      
+      return datePrefix + date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
@@ -75,13 +91,29 @@ export default function BracketPage() {
     }));
   };
 
-  // Filter games based on selected group
+  // Sort games by start time (chronological order)
+  const sortGamesByTime = (gamesToSort: Game[]) => {
+    return [...gamesToSort].sort((a, b) => {
+      // Handle null start times - put them at the end
+      if (!a.start_time && !b.start_time) return 0;
+      if (!a.start_time) return 1;
+      if (!b.start_time) return -1;
+      
+      // Sort by start time (earliest first)
+      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    });
+  };
+
+  // Filter games based on selected group and sort by time
   useEffect(() => {
-    if (selectedGroup === "all") {
-      setFilteredGames(games);
-    } else {
-      setFilteredGames(games.filter(game => game.group_name === selectedGroup));
+    let filtered = games;
+    if (selectedGroup !== "all") {
+      filtered = games.filter(game => game.group_name === selectedGroup);
     }
+    
+    // Sort filtered games by time
+    const sortedFilteredGames = sortGamesByTime(filtered);
+    setFilteredGames(sortedFilteredGames);
   }, [games, selectedGroup]);
 
   // Organize games by bracket rounds
@@ -333,6 +365,9 @@ export default function BracketPage() {
                             <span className="text-sm text-blue-700 font-medium">
                               {filteredGames.length} of {games.length} games
                             </span>
+                            <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                              ⏰ Chronological
+                            </span>
                             {selectedGroup !== "all" && (
                               <span className="text-xs text-blue-600 bg-blue-200 px-2 py-1 rounded-full">
                                 {selectedGroup}
@@ -343,7 +378,9 @@ export default function BracketPage() {
                       </div>
 
                       <div className="mb-4 text-center">
-                        <p className="text-sm text-gray-600">Found {filteredGames.length} games</p>
+                        <p className="text-sm text-gray-600">
+                          Found {filteredGames.length} games • Sorted chronologically by start time
+                        </p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredGames.map((game_with_teams) => (
