@@ -25,13 +25,33 @@ interface Game {
   game_id: string; // Added game_id to the interface
 }
 
-export default function GameScoreUpdatePage({ params }: { params: { gameId: string } }) {
+interface PageProps {
+  params: Promise<{ gameId: string }>;
+}
+
+export default function GameScoreUpdatePage({ params }: PageProps) {
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showEndGameConfirmation, setShowEndGameConfirmation] = useState(false);
   const [scoreHistory, setScoreHistory] = useState<Array<{team: 'team1' | 'team2', previousScore: number, newScore: number}>>([]);
+  const [gameId, setGameId] = useState<string>('');
   const router = useRouter();
+
+  // Extract gameId from params promise
+  useEffect(() => {
+    const extractGameId = async () => {
+      try {
+        const resolvedParams = await params;
+        setGameId(resolvedParams.gameId);
+      } catch (error) {
+        console.error('Error extracting gameId from params:', error);
+        router.push('/staff/scorekeeping');
+      }
+    };
+    
+    extractGameId();
+  }, [params, router]);
 
   // Check authentication
   useEffect(() => {
@@ -81,14 +101,14 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
   // Fetch specific game
   useEffect(() => {
     const fetchGame = async () => {
-      if (!supabase) return;
+      if (!supabase || !gameId) return;
 
       try {
         // Try to find the game using the game_id from the URL
         const { data, error } = await supabase
           .from('game_with_teams')
           .select('*')
-          .eq('game_id', params.gameId)
+          .eq('game_id', gameId)
           .single();
 
         if (error) {
@@ -99,7 +119,7 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
           const transformedGame = transformGameData(data);
           setGame(transformedGame);
         } else {
-          console.log('No game found with ID:', params.gameId);
+          console.log('No game found with ID:', gameId);
         }
       } catch {
         console.error('Error fetching game: Unknown error');
@@ -109,7 +129,7 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
     };
 
     fetchGame();
-  }, [params.gameId]);
+  }, [gameId]);
 
   // Update game score
   const updateGameScore = async (team: 'team1' | 'team2') => {
