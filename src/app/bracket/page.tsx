@@ -66,7 +66,7 @@ export default function BracketPage() {
   };
 
   // Transform games data with formatted timestamps
-  const transformGamesData = (rawGames: any[]) => {
+  const transformGamesData = (rawGames: Game[]) => {
     return rawGames.map(game => ({
       ...game,
       start_time_formatted: game.start_time ? formatStartTime(game.start_time) : 'TBD',
@@ -253,7 +253,7 @@ export default function BracketPage() {
           }, {} as { [key: string]: number }));
           
           // Extract unique groups from the view for the filter dropdown
-          const groups = [...new Set(transformedGames.map(game => game.group_name))].sort();
+          const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
           setAvailableGroups(groups);
         }
       } catch (error) {
@@ -646,7 +646,7 @@ export default function BracketPage() {
                           <h4 className="text-lg font-semibold text-red-600">Championship</h4>
                         </div>
                         
-                        {organizeBracketGames(games).final.map((game, index) => (
+                        {organizeBracketGames(games).final.map((game) => (
                           <div key={`championship-${game.id}`} className="bg-red-50 rounded-lg border border-red-200 p-4 min-h-[80px] flex flex-col justify-center">
                             <div className="text-xs text-red-500 mb-2">Championship Game</div>
                             <div className="space-y-2">

@@ -62,13 +62,13 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
         minute: '2-digit',
         hour12: true
       });
-    } catch (error) {
+    } catch {
       return 'TBD';
     }
   };
 
   // Transform game data
-  const transformGameData = (rawGame: any) => {
+  const transformGameData = (rawGame: Game) => {
     return {
       ...rawGame,
       start_time_formatted: formatStartTime(rawGame.start_time),
@@ -93,14 +93,16 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
 
         if (error) {
           console.error('Error fetching game:', error);
+          setLoading(false);
+          return; // Exit early on error
         } else if (data) {
           const transformedGame = transformGameData(data);
           setGame(transformedGame);
         } else {
           console.log('No game found with ID:', params.gameId);
         }
-      } catch (error) {
-        console.error('Error fetching game:', error);
+      } catch {
+        console.error('Error fetching game: Unknown error');
       } finally {
         setLoading(false);
       }
@@ -150,8 +152,8 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
           } : null
         );
       }
-    } catch (error) {
-      console.error('Error updating score:', error);
+    } catch {
+      console.error('Error updating score: Unknown error');
       // Remove the history entry if update failed
       setScoreHistory(prev => prev.slice(0, -1));
     } finally {
@@ -199,8 +201,8 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
         // Remove the last change from history
         setScoreHistory(prev => prev.slice(0, -1));
       }
-    } catch (error) {
-      console.error('Error undoing score:', error);
+    } catch {
+      console.error('Error undoing score: Unknown error');
     } finally {
       setUpdating(false);
     }
@@ -251,8 +253,8 @@ export default function GameScoreUpdatePage({ params }: { params: { gameId: stri
         // Redirect back to scorekeeping list
         window.location.href = '/staff/scorekeeping';
       }
-    } catch (error) {
-      console.error('❌ Error ending game:', error);
+    } catch {
+      console.error('❌ Error ending game: Unknown error');
     } finally {
       setUpdating(false);
       setShowEndGameConfirmation(false);

@@ -29,7 +29,7 @@ export default function ScorekeepingPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<string | null>(null);
+  // const [updating, setUpdating] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const router = useRouter();
@@ -63,13 +63,13 @@ export default function ScorekeepingPage() {
         minute: '2-digit',
         hour12: true
       });
-    } catch (error) {
+    } catch {
       return 'TBD';
     }
   };
 
   // Transform games data - using team names directly from the view
-  const transformGamesData = (rawGames: any[]) => {
+  const transformGamesData = (rawGames: Game[]) => {
     return rawGames.map(game_with_teams => ({
       ...game_with_teams,
       start_time_formatted: formatStartTime(game_with_teams.start_time),
@@ -100,16 +100,18 @@ export default function ScorekeepingPage() {
 
         if (error) {
           console.error('Error fetching games:', error);
+          setLoading(false);
+          return; // Exit early on error
         } else {
           const transformedGames = transformGamesData(data || []);
           setGames(transformedGames);
           
           // Extract unique groups from the view for the filter dropdown
-          const groups = [...new Set(transformedGames.map(game => game.group_name))].sort();
+          const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
           setAvailableGroups(groups);
         }
-      } catch (error) {
-        console.error('Error fetching games:', error);
+      } catch {
+        console.error('Error fetching games: Unknown error');
       } finally {
         setLoading(false);
       }
@@ -118,39 +120,7 @@ export default function ScorekeepingPage() {
     fetchGames();
   }, []);
 
-  // Update game score
-  const updateGameScore = async (gameId: string, team: 'team1' | 'team2', newScore: number) => {
-    if (!supabase) return;
 
-    setUpdating(gameId);
-    
-    try {
-      const { error } = await supabase
-        .from('games')
-        .update({ 
-          [team === 'team1' ? 'score1' : 'score2']: newScore,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', gameId);
-
-      if (error) {
-        console.error('Error updating score:', error);
-      } else {
-        // Update local state
-        setGames(prevGames => 
-          prevGames.map(game => 
-            game.id === gameId 
-              ? { ...game, [team === 'team1' ? 'score1' : 'score2']: newScore }
-              : game
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error updating score:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
 
   if (loading) {
     return (

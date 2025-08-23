@@ -17,6 +17,11 @@ export default function SupabaseExample() {
         // Test the connection with a simple query
         const { error } = await supabase.from('_dummy_table_').select('*').limit(1)
         
+        if (error) {
+          // Table doesn't exist, but connection is working
+          console.log('Connection test - table not found (expected):', error.message)
+        }
+        
         // If we get here, the connection is working (even if table doesn't exist)
         setStatus('connected')
       } catch (error) {
