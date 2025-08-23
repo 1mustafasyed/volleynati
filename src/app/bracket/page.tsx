@@ -298,6 +298,74 @@ export default function BracketPage() {
     fetchGames();
   }, []);
 
+  // Real-time subscription for live score updates
+  useEffect(() => {
+    if (!supabase) return;
+
+    console.log("Setting up real-time subscription for live score updates...");
+    
+    // Subscribe to score changes in the games table
+    const subscription = supabase
+      .channel('live-score-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'games'
+        },
+        (payload) => {
+          console.log('🔴 Live score update received:', payload);
+          
+          // Only refresh if it's a score-related update
+          if (payload.new && payload.old) {
+            const newGame = payload.new;
+            const oldGame = payload.old;
+            
+            // Check if scores actually changed
+            if (newGame.score1 !== oldGame.score1 || newGame.score2 !== oldGame.score2) {
+              console.log('⚽ Score change detected, refreshing games...');
+              
+              // Refresh games data to show updated scores
+              const refreshGames = async () => {
+                if (!supabase) return;
+                
+                try {
+                  const { data, error } = await supabase
+                    .from('game_with_teams')
+                    .select('*');
+                  
+                  if (!error && data) {
+                    const transformedGames = transformGamesData(data || []);
+                    setGames(transformedGames);
+                    
+                    // Recalculate standings with new scores
+                    const calculatedStandings = calculateStandings(transformedGames);
+                    setStandings(calculatedStandings);
+                    
+                    console.log('✅ Games refreshed with live score updates');
+                  }
+                } catch (error) {
+                  console.error('❌ Error refreshing games after score update:', error);
+                }
+              };
+              
+              refreshGames();
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Live score subscription status:', status);
+      });
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log("Cleaning up live score subscription...");
+      subscription.unsubscribe();
+    };
+  }, [supabase]); // Only depend on supabase client
+
   return (
     <div className="min-h-screen bg-white text-black">
       <HamburgerMenu />
@@ -364,9 +432,6 @@ export default function BracketPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-blue-700 font-medium">
                               {filteredGames.length} of {games.length} games
-                            </span>
-                            <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                              ⏰ Chronological
                             </span>
                             {selectedGroup !== "all" && (
                               <span className="text-xs text-blue-600 bg-blue-200 px-2 py-1 rounded-full">
