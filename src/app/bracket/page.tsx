@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { supabase } from "@/lib/supabase";
 
@@ -44,7 +44,6 @@ export default function BracketPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [groupStageCompleted, setGroupStageCompleted] = useState(false);
-  const [staticGroupStandings, setStaticGroupStandings] = useState<TeamStanding[]>([]);
 
   const tabs = [
     { id: "Games", label: "Games" },
@@ -84,17 +83,17 @@ export default function BracketPage() {
   };
 
   // Transform games data with formatted timestamps
-  const transformGamesData = (rawGames: Game[]) => {
+  const transformGamesData = useCallback((rawGames: Game[]) => {
     return rawGames.map(game => ({
       ...game,
       start_time_formatted: game.start_time ? formatStartTime(game.start_time) : 'TBD',
       team1_name: game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`,
       team2_name: game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`
     }));
-  };
+  }, []);
 
   // Sort games by start time (chronological order)
-  const sortGamesByTime = (gamesToSort: Game[]) => {
+  const sortGamesByTime = useCallback((gamesToSort: Game[]) => {
     return [...gamesToSort].sort((a, b) => {
       // Handle null start times - put them at the end
       if (!a.start_time && !b.start_time) return 0;
@@ -104,7 +103,7 @@ export default function BracketPage() {
       // Sort by start time (earliest first)
       return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
     });
-  };
+  }, []);
 
   // Filter games based on selected group and sort by time
   useEffect(() => {
@@ -116,10 +115,10 @@ export default function BracketPage() {
     // Sort filtered games by time
     const sortedFilteredGames = sortGamesByTime(filtered);
     setFilteredGames(sortedFilteredGames);
-  }, [games, selectedGroup]);
+  }, [games, selectedGroup, sortGamesByTime]);
 
   // Organize games by bracket rounds
-  const organizeBracketGames = (games: Game[]) => {
+  const organizeBracketGames = useCallback((games: Game[]) => {
     const bracketGames = {
       groupStage: games.filter(game => game.bracket_name === 'Group Stage'),
       playIn: games.filter(game => game.bracket_name === 'Play-In'),
@@ -128,10 +127,10 @@ export default function BracketPage() {
       final: games.filter(game => game.bracket_name === 'Final')
     };
     return bracketGames;
-  };
+  }, []);
 
   // Calculate team standings
-  const calculateStandings = (games: Game[]) => {
+  const calculateStandings = useCallback((games: Game[]) => {
     const teamStats: { [key: string]: TeamStanding } = {};
 
     // Initialize team stats from teams table data
@@ -218,10 +217,10 @@ export default function BracketPage() {
     });
 
     return standingsArray;
-  };
+  }, []);
 
   // Check if all group stage games are completed
-  const areAllGroupGamesCompleted = (games: Game[]) => {
+  const areAllGroupGamesCompleted = useCallback((games: Game[]) => {
     const groupGames = games.filter(game => 
       game.bracket_name === 'Group Stage' || 
       (game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name))
@@ -230,26 +229,25 @@ export default function BracketPage() {
     if (groupGames.length === 0) return false;
     
     return groupGames.every(game => game.status === 'Completed');
-  };
+  }, []);
 
   // Get static group standings (only calculated once when all group games are done)
-  const getStaticGroupStandings = (games: Game[]) => {
+  const getStaticGroupStandings = useCallback((games: Game[]) => {
     // Only include teams from Groups A-D in the standings
     const groupTeams = games.filter(game => 
       game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name)
     );
     
     return calculateStandings(groupTeams);
-  };
+  }, [calculateStandings]);
 
   // Manual lock function for admin purposes
-  const lockStandingsToStatic = () => {
+  const lockStandingsToStatic = useCallback(() => {
     setGroupStageCompleted(true);
     const staticStandings = getStaticGroupStandings(games);
-    setStaticGroupStandings(staticStandings);
     setStandings(staticStandings);
     console.log('✅ Standings manually locked to static mode');
-  };
+  }, [games, getStaticGroupStandings]);
 
   // Fetch games from Supabase
   useEffect(() => {
@@ -312,7 +310,6 @@ export default function BracketPage() {
           if (groupStageDone) {
             // Group stage is complete - use static standings
             const staticStandings = getStaticGroupStandings(transformedGames);
-            setStaticGroupStandings(staticStandings);
             setStandings(staticStandings);
             console.log('✅ Group stage completed - standings are now static');
           } else {
@@ -342,7 +339,7 @@ export default function BracketPage() {
     };
 
     fetchGames();
-  }, []);
+  }, [transformGamesData, areAllGroupGamesCompleted, getStaticGroupStandings, calculateStandings, standings]);
 
   // Real-time subscription for live score updates
   useEffect(() => {
@@ -415,7 +412,7 @@ export default function BracketPage() {
       console.log("Cleaning up live score subscription...");
       subscription.unsubscribe();
     };
-  }, [supabase]); // Only depend on supabase client
+  }, [transformGamesData, calculateStandings, groupStageCompleted]); // Only depend on relevant functions and state
 
   return (
     <div className="min-h-screen bg-white text-black">
