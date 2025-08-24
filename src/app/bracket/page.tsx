@@ -43,6 +43,8 @@ export default function BracketPage() {
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
+  const [groupStageCompleted, setGroupStageCompleted] = useState(false);
+  const [staticGroupStandings, setStaticGroupStandings] = useState<TeamStanding[]>([]);
 
   const tabs = [
     { id: "Games", label: "Games" },
@@ -132,38 +134,38 @@ export default function BracketPage() {
   const calculateStandings = (games: Game[]) => {
     const teamStats: { [key: string]: TeamStanding } = {};
 
-          // Initialize team stats from teams table data
-      games.forEach(game => {
-        if (game.team1_name && game.team2_name) {
-          // Initialize team1 if not exists
-          if (!teamStats[game.team1_id]) {
-            teamStats[game.team1_id] = {
-              team_id: game.team1_id,
-              team_name: game.team1_name,
-              group_name: game.group_name || 'Unknown',
-              wins: 0,
-              losses: 0,
-              points_scored: 0,
-              points_allowed: 0,
-              point_differential: 0,
-              games_played: 0
-            };
-          }
-          
-          // Initialize team2 if not exists
-          if (!teamStats[game.team2_id]) {
-            teamStats[game.team2_id] = {
-              team_id: game.team2_id,
-              team_name: game.team2_name,
-              group_name: game.group_name || 'Unknown',
-              wins: 0,
-              losses: 0,
-              points_scored: 0,
-              points_allowed: 0,
-              point_differential: 0,
-              games_played: 0
-            };
-          }
+    // Initialize team stats from teams table data
+    games.forEach(game => {
+      if (game.team1_name && game.team2_name) {
+        // Initialize team1 if not exists
+        if (!teamStats[game.team1_id]) {
+          teamStats[game.team1_id] = {
+            team_id: game.team1_id,
+            team_name: game.team1_name,
+            group_name: game.group_name || 'Unknown',
+            wins: 0,
+            losses: 0,
+            points_scored: 0,
+            points_allowed: 0,
+            point_differential: 0,
+            games_played: 0
+          };
+        }
+        
+        // Initialize team2 if not exists
+        if (!teamStats[game.team2_id]) {
+          teamStats[game.team2_id] = {
+            team_id: game.team2_id,
+            team_name: game.team2_name,
+            group_name: game.group_name || 'Unknown',
+            wins: 0,
+            losses: 0,
+            points_scored: 0,
+            points_allowed: 0,
+            point_differential: 0,
+            games_played: 0
+          };
+        }
 
         // Update stats for all games (not just completed ones)
         const team1 = teamStats[game.team1_id];
@@ -216,6 +218,37 @@ export default function BracketPage() {
     });
 
     return standingsArray;
+  };
+
+  // Check if all group stage games are completed
+  const areAllGroupGamesCompleted = (games: Game[]) => {
+    const groupGames = games.filter(game => 
+      game.bracket_name === 'Group Stage' || 
+      (game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name))
+    );
+    
+    if (groupGames.length === 0) return false;
+    
+    return groupGames.every(game => game.status === 'Completed');
+  };
+
+  // Get static group standings (only calculated once when all group games are done)
+  const getStaticGroupStandings = (games: Game[]) => {
+    // Only include teams from Groups A-D in the standings
+    const groupTeams = games.filter(game => 
+      game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name)
+    );
+    
+    return calculateStandings(groupTeams);
+  };
+
+  // Manual lock function for admin purposes
+  const lockStandingsToStatic = () => {
+    setGroupStageCompleted(true);
+    const staticStandings = getStaticGroupStandings(games);
+    setStaticGroupStandings(staticStandings);
+    setStandings(staticStandings);
+    console.log('✅ Standings manually locked to static mode');
   };
 
   // Fetch games from Supabase
@@ -272,14 +305,27 @@ export default function BracketPage() {
           console.log('Transformed games length:', transformedGames.length);
           setGames(transformedGames);
           
-          // Calculate standings from the games data
-          const calculatedStandings = calculateStandings(transformedGames);
-          setStandings(calculatedStandings);
+          // Check if group stage is completed and set standings accordingly
+          const groupStageDone = areAllGroupGamesCompleted(transformedGames);
+          setGroupStageCompleted(groupStageDone);
+          
+          if (groupStageDone) {
+            // Group stage is complete - use static standings
+            const staticStandings = getStaticGroupStandings(transformedGames);
+            setStaticGroupStandings(staticStandings);
+            setStandings(staticStandings);
+            console.log('✅ Group stage completed - standings are now static');
+          } else {
+            // Group stage still in progress - calculate dynamic standings
+            const calculatedStandings = calculateStandings(transformedGames);
+            setStandings(calculatedStandings);
+            console.log('🔄 Group stage in progress - standings are dynamic');
+          }
           
           // Debug: Check what groups we're getting
           console.log('Available groups from games:', [...new Set(transformedGames.map(game => game.group_name))]);
-          console.log('Standings calculated:', calculatedStandings);
-          console.log('Teams per group:', calculatedStandings.reduce((acc, team) => {
+          console.log('Standings calculated:', standings);
+          console.log('Teams per group:', standings.reduce((acc, team) => {
             acc[team.group_name] = (acc[team.group_name] || 0) + 1;
             return acc;
           }, {} as { [key: string]: number }));
@@ -339,9 +385,14 @@ export default function BracketPage() {
                     const transformedGames = transformGamesData(data || []);
                     setGames(transformedGames);
                     
-                    // Recalculate standings with new scores
-                    const calculatedStandings = calculateStandings(transformedGames);
-                    setStandings(calculatedStandings);
+                    // Only recalculate standings if group stage is not completed
+                    if (!groupStageCompleted) {
+                      const calculatedStandings = calculateStandings(transformedGames);
+                      setStandings(calculatedStandings);
+                      console.log('🔄 Standings updated (group stage in progress)');
+                    } else {
+                      console.log('✅ Standings remain static (group stage completed)');
+                    }
                     
                     console.log('✅ Games refreshed with live score updates');
                   }
@@ -396,6 +447,25 @@ export default function BracketPage() {
           <div className="min-h-[60vh]">
             {activeTab === "Games" && (
               <div className="space-y-6">
+                {/* Status Banner */}
+                {groupStageCompleted && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-green-900">Group Stage Completed</h4>
+                        <p className="text-sm text-green-700">
+                          All Groups A-D games are finished. Standings are now locked and teams advancing to playoffs will appear in playoff brackets.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="bg-gray-50 rounded-lg p-8">
                   {loading ? (
                     <div className="text-center">
@@ -512,7 +582,53 @@ export default function BracketPage() {
 
             {activeTab === "Standings" && (
               <div className="space-y-6">
-                <h2 className="text-3xl font-bold text-gray-900">Tournament Standings</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <h2 className="text-3xl font-bold text-gray-900">Tournament Standings</h2>
+                  
+                  {/* Status Indicator */}
+                  <div className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    groupStageCompleted 
+                      ? 'bg-green-100 text-green-800 border border-green-200' 
+                      : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                  }`}>
+                    {groupStageCompleted ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Group Stage Completed - Standings Locked
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                        Group Stage In Progress - Standings Live
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Admin Controls */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">Admin Controls</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {groupStageCompleted 
+                          ? 'Standings are currently locked and cannot be changed.'
+                          : 'Standings are currently live. Lock them when group stage is complete.'
+                        }
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {!groupStageCompleted && (
+                        <button
+                          onClick={lockStandingsToStatic}
+                          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          Lock Standings
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 
                 {loading ? (
                   <div className="bg-gray-50 rounded-lg p-8 text-center">
@@ -610,6 +726,26 @@ export default function BracketPage() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+                
+                {/* Info note when group stage is completed */}
+                {groupStageCompleted && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900">Group Stage Standings Locked</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          All Groups A-D games have been completed. These standings are now final and will not change during playoffs. 
+                          Teams that advance to playoffs will appear in their respective playoff brackets.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -773,7 +909,6 @@ export default function BracketPage() {
                         ))}
                       </div>
                     </div>
-
                   </div>
                 )}
               </div>
