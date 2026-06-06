@@ -96,9 +96,6 @@ export default function LandingPage() {
           className="w-full rounded-lg"
           style={{ filter: "sepia(10%) saturate(85%)" }}
         />
-        <p className="text-[10px] tracking-wide text-center mt-2" style={{ color: "#8C7355" }}>
-          Jaycee Park, Raleigh — Est. 2023
-        </p>
       </div>
 
       {/* Bottom nav links */}
