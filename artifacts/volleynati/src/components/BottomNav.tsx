@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   return (
     <div
-      className="px-5 py-5 flex justify-between border-t max-w-2xl mx-auto"
+      className="px-5 py-5 flex justify-between border-t w-full max-w-2xl mx-auto"
       style={{ borderColor: "#C8BFA8" }}
     >
       {NAV_LINKS.map(({ label, href }) => {
