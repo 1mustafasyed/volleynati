@@ -61,7 +61,7 @@ export default function HamburgerMenu() {
             <nav className="flex flex-col px-6 py-6 gap-1">
               {[
                 { label: "Home",     href: "/landing"   },
-                { label: "Bracket",  href: "/bracket"   },
+                // { label: "Bracket",  href: "/bracket"   },
                 { label: "History",  href: "/history"   },
                 { label: "Sponsors", href: "/sponsors"  },
               ].map(({ label, href }) => (
