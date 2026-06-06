@@ -46,14 +46,17 @@ export default function SponsorsPage() {
             {
               heading: "Community reach",
               body: "Hundreds of players, families, and spectators attend each year — your brand in front of Raleigh's most engaged community.",
+              image: "/sponsors/community-reach.jpg",
             },
             {
               heading: "Media coverage",
               body: "Extensive photo, video, and social media coverage capturing every moment of the event.",
+              image: "/sponsors/media-coverage.jpg",
             },
             {
               heading: "Meaningful impact",
               body: "100% volunteer-powered. Every dollar raised supports humanitarian aid, food, and water for those who need it most.",
+              image: "/sponsors/meaningful-impact.jpg",
             },
           ].map((item) => (
             <div
@@ -65,11 +68,17 @@ export default function SponsorsPage() {
                 {item.heading}
               </p>
               <p
-                className="text-sm leading-relaxed"
+                className="text-sm leading-relaxed mb-3"
                 style={{ color: "#8C7355" }}
               >
                 {item.body}
               </p>
+              <img
+                src={item.image}
+                alt={item.heading}
+                className="w-full object-cover"
+                style={{ maxHeight: "220px" }}
+              />
             </div>
           ))}
         </div>
