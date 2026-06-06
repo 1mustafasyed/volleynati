@@ -76,8 +76,7 @@ export default function SponsorsPage() {
               <img
                 src={item.image}
                 alt={item.heading}
-                className="w-full object-cover"
-                style={{ maxHeight: "220px" }}
+                className="w-full"
               />
             </div>
           ))}
