@@ -65,9 +65,9 @@ export default function LandingPage() {
         <p className="text-[10px] tracking-[0.2em] mb-4" style={{ color: "#8C7355" }}>KEY DATES</p>
         <div className="space-y-3">
           {[
-            { label: "Registration Opens", value: "June 10"  },
-            { label: "Early Bird Closes",  value: "July 3"   },
-            { label: "General Reg Closes", value: "July 17"  },
+            { label: "Registration Opens", value: "June 7"  },
+            { label: "Early Bird Closes",  value: "June 22"   },
+            { label: "General Reg Closes", value: "July 6"  },
             { label: "Tournament Day",     value: "Aug 8"    },
           ].map((d) => (
             <div
