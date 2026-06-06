@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Volleynati 2025"
+version = "1.0.0"
+id = "artifacts/volleynati"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21810
+
+[services.development]
+run = "pnpm --filter @workspace/volleynati run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/volleynati", "run", "build" ]
+publicDir = "artifacts/volleynati/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21810"
+BASE_PATH = "/"

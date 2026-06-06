@@ -1,1 +1,2 @@
 .migration-backup/public/b-roll-video.mp4 filter=lfs diff=lfs merge=lfs -text
+artifacts/volleynati/public/b-roll-video.mp4 filter=lfs diff=lfs merge=lfs -text
