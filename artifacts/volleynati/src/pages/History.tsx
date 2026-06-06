@@ -75,6 +75,20 @@ export default function HistoryPage() {
       <div className="px-5 py-6 max-w-2xl mx-auto" style={{ backgroundColor: "#EDE5D4" }}>
         <p className="text-[10px] tracking-[0.2em] mb-5" style={{ color: "#8C7355" }}>TOURNAMENT CHAMPIONS</p>
 
+        {/* 2025 */}
+        <div className="mb-8">
+          <div className="flex justify-between items-baseline mb-3 pb-3" style={{ borderBottom: "1px solid #C8BFA8" }}>
+            <span className="text-sm" style={{ color: "#4A3728" }}>2025 Champions</span>
+            <span className="text-base" style={{ color: "#1C1A16" }}>The Underdogs</span>
+          </div>
+          <img
+            src="/history/2025-champions.jpg"
+            alt="2025 Champions — The Underdogs"
+            className="w-full rounded-lg"
+            style={{ filter: "sepia(6%) saturate(90%)" }}
+          />
+        </div>
+
         {/* 2024 */}
         <div className="mb-8">
           <div className="flex justify-between items-baseline mb-3 pb-3" style={{ borderBottom: "1px solid #C8BFA8" }}>
