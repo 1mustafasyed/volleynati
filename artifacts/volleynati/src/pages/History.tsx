@@ -1,135 +1,120 @@
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import HamburgerMenu from "@/components/HamburgerMenu";
 
 export default function HistoryPage() {
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-[#F5F0E8] text-[#1C1A16]">
       <HamburgerMenu />
-      <div className="p-4 flex justify-end items-center">
-        <Button variant="outline" asChild>
-          <Link href="/landing">Back</Link>
-        </Button>
+
+      {/* Page title */}
+      <div className="px-5 pt-7 pb-5 max-w-2xl mx-auto">
+        <p className="text-[10px] tracking-[0.2em] mb-3" style={{ color: "#8C7355" }}>ABOUT</p>
+        <h1 className="text-[56px] leading-[0.9] mb-4" style={{ color: "#1C1A16" }}>
+          OUR<br />
+          <span style={{ color: "#8C7355" }}>HISTORY</span>
+        </h1>
+        <div className="w-8 h-px mb-5" style={{ backgroundColor: "#C8BFA8" }} />
+        <p className="text-base leading-relaxed" style={{ color: "#4A3728" }}>
+          Volleynati began in August 2023 as a simple idea born in a bedroom in Raleigh:
+          bring people together through volleyball to provide humanitarian aid, food, and
+          water to those who need it most. What started as a small charity tournament has
+          grown into one of Raleigh&apos;s most anticipated annual events.
+        </p>
       </div>
 
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center text-black">
-            Our History
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <p className="text-lg text-gray-700 leading-relaxed mb-4">
-                Volleynati began in August 2023 as a simple idea born in a bedroom in Raleigh: bring people together through volleyball to provide humanitarian aid, food, and water to those who need it most. What started as a small charity tournament has grown into one of Raleigh&apos;s most anticipated annual events.
-              </p>
+      {/* Photo 1 */}
+      <div className="px-5 pb-6 max-w-2xl mx-auto">
+        <img
+          src="/history/thumbnail-4.png"
+          alt="Volleynati community photo"
+          className="w-full rounded-lg"
+          style={{ filter: "sepia(6%) saturate(90%)" }}
+        />
+      </div>
 
-              <div className="mb-8 flex justify-center">
-                <div className="w-full max-w-2xl mx-auto">
-                  <div className="bg-gray-100 rounded-lg overflow-hidden">
-                    <img
-                      src="/history/thumbnail-4.png"
-                      alt="Volleynati thumbnail 4"
-                      width={800}
-                      height={600}
-                      className="w-full h-auto object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
+      {/* Section 2 */}
+      <div className="px-5 py-6 max-w-2xl mx-auto" style={{ borderTop: "1px solid #C8BFA8" }}>
+        <p className="text-base leading-relaxed" style={{ color: "#4A3728" }}>
+          Every summer, hundreds of players, supporters, and local businesses gather to
+          transform Volleynati into a vibrant festival celebrating community and compassion.
+          From competitive volleyball matches to live music, food trucks, artisan shopping,
+          hands-on activities, and unforgettable giveaways, Volleynati offers something for everyone.
+        </p>
+      </div>
 
-              <p className="text-lg text-gray-700 leading-relaxed">
-                Every summer, hundreds of players, supporters, and local businesses gather to transform Volleynati into a vibrant festival celebrating community and compassion. From competitive volleyball matches to live music, food trucks, artisan shopping, hands-on activities, and unforgettable giveaways, Volleynati offers something for everyone.
-              </p>
-            </div>
+      {/* Photo 2 */}
+      <div className="px-5 pb-6 max-w-2xl mx-auto">
+        <img
+          src="/history/thumbnail-5.png"
+          alt="Volleynati festival photo"
+          className="w-full rounded-lg"
+          style={{ filter: "sepia(6%) saturate(90%)" }}
+        />
+      </div>
 
-            <div className="mb-8 flex justify-center">
-              <div className="w-full max-w-2xl mx-auto">
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src="/history/thumbnail-5.png"
-                    alt="Volleynati thumbnail 5"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              </div>
-            </div>
+      {/* Section 3 */}
+      <div className="px-5 py-6 max-w-2xl mx-auto" style={{ borderTop: "1px solid #C8BFA8" }}>
+        <p className="text-base leading-relaxed" style={{ color: "#4A3728" }}>
+          More than volleyball, Volleynati is a movement — a chance to reunite, give back,
+          and make a real impact while closing out the summer in the best way possible.
+          Every serve, set, and spike helps change lives.
+        </p>
+      </div>
 
-            <div>
-              <p className="text-lg text-gray-700 leading-relaxed mb-4">
-                More than volleyball, Volleynati is a movement, a chance to reunite, give back, and make a real impact while closing out the summer in the best way possible. With extensive photo, video, and media coverage capturing every moment, the memories and stories from Volleynati reach far beyond the court.
-                Join us and be part of a historical event where sport meets purpose, and where every serve, set, and spike helps change lives.
-              </p>
-            </div>
+      {/* Photo 3 */}
+      <div className="px-5 pb-8 max-w-2xl mx-auto">
+        <img
+          src="/history/thumbnail-3.png"
+          alt="Volleynati action photo"
+          className="w-full rounded-lg"
+          style={{ filter: "sepia(6%) saturate(90%)" }}
+        />
+      </div>
 
-            <div className="mb-8 flex justify-center">
-              <div className="w-full max-w-2xl mx-auto">
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src="/history/thumbnail-3.png"
-                    alt="Volleynati thumbnail 3"
-                    width={200}
-                    height={400}
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              </div>
-            </div>
+      {/* Champions section */}
+      <div className="px-5 py-6 max-w-2xl mx-auto" style={{ backgroundColor: "#EDE5D4" }}>
+        <p className="text-[10px] tracking-[0.2em] mb-5" style={{ color: "#8C7355" }}>TOURNAMENT CHAMPIONS</p>
+
+        {/* 2024 */}
+        <div className="mb-8">
+          <div className="flex justify-between items-baseline mb-3 pb-3" style={{ borderBottom: "1px solid #C8BFA8" }}>
+            <span className="text-sm" style={{ color: "#4A3728" }}>2024 Champions</span>
+            <span className="text-base" style={{ color: "#1C1A16" }}>Hugo&apos;s Little Munchkins</span>
           </div>
-
-          <div className="mt-12 text-center">
-            <h3 className="text-2xl font-bold text-black mb-6">Tournament Champions</h3>
-
-            <div className="mb-8">
-              <div className="bg-white rounded-lg p-4 border border-gray-200 inline-block mb-4">
-                <h4 className="text-xl font-bold text-gray-800">2024 Champions</h4>
-                <p className="text-lg text-gray-600">Hugo&apos;s Little Munchkins</p>
-              </div>
-              <div className="w-full max-w-2xl mx-auto">
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src="/history/2024-champions.png"
-                    alt="2024 Champions - Hugo's Little Munchkins"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <div className="bg-white rounded-lg p-4 border border-gray-200 inline-block mb-4">
-                <h4 className="text-xl font-bold text-gray-800">2023 Champions</h4>
-                <p className="text-lg text-gray-600">Notorious D.I.G</p>
-              </div>
-              <div className="w-full max-w-2xl mx-auto">
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src="/history/2023-champions.png"
-                    alt="2023 Champions - Notorious D.I.G"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto">
-              As we approach Volleynati 2025, we&apos;re excited to welcome 20 teams for our biggest tournament yet. The legacy continues to grow, and we can&apos;t wait to see what new memories and champions this year will bring.
-            </p>
-          </div>
+          <img
+            src="/history/2024-champions.png"
+            alt="2024 Champions — Hugo's Little Munchkins"
+            className="w-full rounded-lg"
+            style={{ filter: "sepia(6%) saturate(90%)" }}
+          />
         </div>
-      </section>
 
-      <footer className="py-8 px-4 border-t border-gray-300">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-gray-600">© Volleynati 2025</p>
+        {/* 2023 */}
+        <div>
+          <div className="flex justify-between items-baseline mb-3 pb-3" style={{ borderBottom: "1px solid #C8BFA8" }}>
+            <span className="text-sm" style={{ color: "#4A3728" }}>2023 Champions</span>
+            <span className="text-base" style={{ color: "#1C1A16" }}>Notorious D.I.G</span>
+          </div>
+          <img
+            src="/history/2023-champions.png"
+            alt="2023 Champions — Notorious D.I.G"
+            className="w-full rounded-lg"
+            style={{ filter: "sepia(6%) saturate(90%)" }}
+          />
         </div>
+      </div>
+
+      {/* Closing note */}
+      <div className="px-5 py-8 max-w-2xl mx-auto" style={{ borderTop: "1px solid #C8BFA8" }}>
+        <p className="text-base leading-relaxed" style={{ color: "#4A3728" }}>
+          As we head into Volleynati 2026, we&apos;re excited to welcome more teams than ever.
+          The legacy continues to grow, and we can&apos;t wait to see what new memories and
+          champions this year will bring.
+        </p>
+      </div>
+
+      {/* Footer */}
+      <footer className="py-6 px-5 text-center" style={{ borderTop: "1px solid #C8BFA8", backgroundColor: "#EDE5D4" }}>
+        <p className="text-xs tracking-[0.12em]" style={{ color: "#8C7355" }}>© VOLLEYNATI 2026</p>
       </footer>
     </div>
   );
