@@ -76,7 +76,7 @@ export default function SponsorsPage() {
               <img
                 src={item.image}
                 alt={item.heading}
-                className="w-full"
+                className="w-full rounded-lg"
               />
             </div>
           ))}
