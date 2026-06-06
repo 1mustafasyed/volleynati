@@ -89,10 +89,10 @@ export default function LandingPage() {
           unites people every summer around community, generosity, and unforgettable memories.
         </p>
 
-        {/* Drone shot */}
+        {/* Action shot */}
         <img
-          src="/landing/droneshot.jpg"
-          alt="Aerial view of Jaycee Park during Volleynati"
+          src="/landing/action-shot.jpg"
+          alt="Volleynati player reaching for the ball at the net"
           className="w-full rounded-lg"
           style={{ filter: "sepia(10%) saturate(85%)" }}
         />
