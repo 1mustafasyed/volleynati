@@ -121,11 +121,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-8 px-4 bg-gray-50">
+      {/* <section className="py-8 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <SupabaseExample />
         </div>
-      </section>
+      </section> */}
 
       <footer className="py-8 px-4 border-t border-gray-300">
         <div className="max-w-4xl mx-auto text-center">
