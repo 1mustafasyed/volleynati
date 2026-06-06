@@ -1,4 +1,5 @@
 import HamburgerMenu from "@/components/HamburgerMenu";
+import BottomNav from "@/components/BottomNav";
 
 export default function SponsorsPage() {
   return (
@@ -51,6 +52,9 @@ export default function SponsorsPage() {
           BECOME A SPONSOR
         </a>
       </div>
+
+      {/* Bottom nav links */}
+      <BottomNav />
 
       {/* Footer */}
       <footer className="mt-auto py-6 px-5 text-center" style={{ borderTop: "1px solid #C8BFA8", backgroundColor: "#EDE5D4" }}>

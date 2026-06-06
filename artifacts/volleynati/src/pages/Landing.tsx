@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import BottomNav from "@/components/BottomNav";
 
 export default function LandingPage() {
   return (
@@ -101,26 +102,7 @@ export default function LandingPage() {
       </div>
 
       {/* Bottom nav links */}
-      <div
-        className="px-5 py-5 flex justify-between border-t max-w-2xl mx-auto"
-        style={{ borderColor: "#C8BFA8" }}
-      >
-        {[
-          { label: "ABOUT",    href: "/landing"  },
-          // { label: "BRACKET",  href: "/bracket"  },
-          { label: "HISTORY",  href: "/history"  },
-          { label: "SPONSORS", href: "/sponsors" },
-        ].map(({ label, href }) => (
-          <Link
-            key={href}
-            href={href}
-            className="text-xs tracking-[0.12em] no-underline transition-colors"
-            style={{ color: "#8C7355" }}
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
+      <BottomNav />
 
       {/* Footer */}
       <footer
