@@ -22,7 +22,8 @@ export default function LandingPage() {
         </p>
         {/* Why it matters — third, lighter */}
         <p className="text-sm leading-relaxed mb-6" style={{ color: "#8C7355" }}>
-          100% volunteer-powered · Free to spectate · Est. 2023
+          100% volunteer-powered ·
+          Est. 2023
         </p>
 
         <div className="w-8 h-px mb-6" style={{ backgroundColor: "#C8BFA8" }} />
