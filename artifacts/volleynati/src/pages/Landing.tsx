@@ -128,14 +128,7 @@ export default function LandingPage() {
 
       {/* Body copy */}
       <div className="px-5 pt-8 pb-6 max-w-2xl mx-auto">
-        <p
-          className="text-base leading-relaxed"
-          style={{ color: "#4A3728" }}
-        >
-          Today, Volleynati has become a staple in Raleigh&apos;s culture. A
-          tradition that unites people every summer around community,
-          generosity, and unforgettable memories.
-        </p>
+        
       </div>
 
       {/* Action shot */}
