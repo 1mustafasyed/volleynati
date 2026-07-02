@@ -105,23 +105,15 @@ export default function LandingPage() {
       </div>
 
       {/* Body copy */}
-      <div className="px-5 py-8 max-w-2xl mx-auto">
+      <div className="px-5 pt-8 pb-6 max-w-2xl mx-auto">
         <p
-          className="text-base leading-relaxed mb-6"
+          className="text-base leading-relaxed"
           style={{ color: "#4A3728" }}
         >
           Today, Volleynati has become a staple in Raleigh&apos;s culture. A
           tradition that unites people every summer around community,
           generosity, and unforgettable memories.
         </p>
-
-        {/* Action shot */}
-        <img
-          src="/landing/action-shot.jpg"
-          alt="Volleynati player reaching for the ball at the net"
-          className="w-full rounded-lg"
-          style={{ filter: "sepia(10%) saturate(85%)" }}
-        />
       </div>
 
       {/* Donate */}
@@ -142,6 +134,16 @@ export default function LandingPage() {
         >
           DONATE
         </a>
+      </div>
+
+      {/* Action shot */}
+      <div className="px-5 pb-8 max-w-2xl mx-auto">
+        <img
+          src="/landing/action-shot.jpg"
+          alt="Volleynati player reaching for the ball at the net"
+          className="w-full rounded-lg"
+          style={{ filter: "sepia(10%) saturate(85%)" }}
+        />
       </div>
 
       {/* Bottom nav links */}
