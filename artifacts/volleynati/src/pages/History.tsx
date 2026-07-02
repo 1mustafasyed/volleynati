@@ -54,11 +54,22 @@ export default function HistoryPage() {
 
       {/* Section 3 */}
       <div className="px-5 py-6 max-w-2xl mx-auto" style={{ borderTop: "1px solid #C8BFA8" }}>
-        <p className="text-base leading-relaxed" style={{ color: "#4A3728" }}>
-          More than volleyball, Volleynati is a movement — a chance to reunite, give back,
+        <p className="text-base leading-relaxed mb-6" style={{ color: "#4A3728" }}>
+          More than volleyball, Volleynati is a movement. It&apos;s a chance to reunite, give back,
           and make a real impact while closing out the summer in the best way possible.
-          Every serve, set, and spike helps change lives.
+          Every serve, set, and spike helps change lives. If you&apos;d like to support the cause
+          directly, donations go entirely toward humanitarian aid, food, and water for those
+          who need it most.
         </p>
+        <a
+          href="https://www.zeffy.com/en-US/donation-form/volleynati-charity-event"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full text-center text-base py-4 tracking-[0.08em] no-underline transition-opacity hover:opacity-80"
+          style={{ backgroundColor: "#4A3728", color: "#F5F0E8" }}
+        >
+          DONATE
+        </a>
       </div>
 
       {/* Photo 3 */}
