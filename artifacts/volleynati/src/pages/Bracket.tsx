@@ -31,6 +31,7 @@ interface TeamStanding {
   points_allowed: number;
   point_differential: number;
   games_played: number;
+  rank: number;
 }
 
 export default function BracketPage() {
@@ -41,13 +42,21 @@ export default function BracketPage() {
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
-  const [groupStageCompleted, setGroupStageCompleted] = useState(false);
 
   const tabs = [
     { id: "Games", label: "Games" },
     { id: "Standings", label: "Standings" },
     { id: "Bracket", label: "Bracket" }
   ];
+
+  // Derive whether all group-stage games are completed from local state
+  const groupStageCompleted = games.length > 0 && (() => {
+    const groupGames = games.filter(game =>
+      game.bracket_name === 'Group Stage' ||
+      (game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name))
+    );
+    return groupGames.length > 0 && groupGames.every(game => game.status === 'Completed');
+  })();
 
   const formatStartTime = (timestamp: string) => {
     try {
@@ -106,82 +115,22 @@ export default function BracketPage() {
     setFilteredGames(sortedFilteredGames);
   }, [games, selectedGroup, sortGamesByTime]);
 
-  const calculateStandings = useCallback((games: Game[]) => {
-    const teamStats: { [key: string]: TeamStanding } = {};
-
-    games.forEach(game => {
-      if (game.team1_name && game.team2_name) {
-        if (!teamStats[game.team1_id]) {
-          teamStats[game.team1_id] = {
-            team_id: game.team1_id,
-            team_name: game.team1_name,
-            group_name: game.group_name || 'Unknown',
-            wins: 0, losses: 0, points_scored: 0,
-            points_allowed: 0, point_differential: 0, games_played: 0
-          };
-        }
-
-        if (!teamStats[game.team2_id]) {
-          teamStats[game.team2_id] = {
-            team_id: game.team2_id,
-            team_name: game.team2_name,
-            group_name: game.group_name || 'Unknown',
-            wins: 0, losses: 0, points_scored: 0,
-            points_allowed: 0, point_differential: 0, games_played: 0
-          };
-        }
-
-        const team1 = teamStats[game.team1_id];
-        const team2 = teamStats[game.team2_id];
-
-        team1.points_scored += game.score1;
-        team1.points_allowed += game.score2;
-        team2.points_scored += game.score2;
-        team2.points_allowed += game.score1;
-
-        if (game.status === 'Completed') {
-          if (game.score1 > game.score2) {
-            team1.wins += 1;
-            team2.losses += 1;
-          } else {
-            team2.wins += 1;
-            team1.losses += 1;
-          }
-        }
-
-        team1.games_played += 1;
-        team2.games_played += 1;
+  // Fetch standings from the group_standings database function
+  const fetchStandings = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error } = await supabase.rpc('group_standings');
+      if (error) {
+        console.error('Error fetching standings:', error);
+      } else {
+        setStandings((data as TeamStanding[]) || []);
       }
-    });
-
-    Object.values(teamStats).forEach(team => {
-      team.point_differential = team.points_scored - team.points_allowed;
-    });
-
-    return Object.values(teamStats).sort((a, b) => {
-      if (a.wins !== b.wins) return b.wins - a.wins;
-      if (a.point_differential !== b.point_differential) return b.point_differential - a.point_differential;
-      if (a.points_scored !== b.points_scored) return b.points_scored - a.points_scored;
-      return a.team_name.localeCompare(b.team_name);
-    });
+    } catch (error) {
+      console.error('Error fetching standings:', error);
+    }
   }, []);
 
-  const areAllGroupGamesCompleted = useCallback((games: Game[]) => {
-    const groupGames = games.filter(game =>
-      game.bracket_name === 'Group Stage' ||
-      (game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name))
-    );
-    if (groupGames.length === 0) return false;
-    return groupGames.every(game => game.status === 'Completed');
-  }, []);
-
-  const getStaticGroupStandings = useCallback((games: Game[]) => {
-    const groupTeams = games.filter(game =>
-      game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name)
-    );
-    return calculateStandings(groupTeams);
-  }, [calculateStandings]);
-
+  // Initial data load
   useEffect(() => {
     const fetchGames = async () => {
       if (!supabase) {
@@ -200,15 +149,6 @@ export default function BracketPage() {
           const transformedGames = transformGamesData(data || []);
           setGames(transformedGames);
 
-          const groupStageDone = areAllGroupGamesCompleted(transformedGames);
-          setGroupStageCompleted(groupStageDone);
-
-          if (groupStageDone) {
-            setStandings(getStaticGroupStandings(transformedGames));
-          } else {
-            setStandings(calculateStandings(transformedGames));
-          }
-
           const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
           setAvailableGroups(groups);
         }
@@ -220,38 +160,52 @@ export default function BracketPage() {
     };
 
     fetchGames();
-  }, [transformGamesData, areAllGroupGamesCompleted, getStaticGroupStandings, calculateStandings]);
+    fetchStandings();
+  }, [transformGamesData, fetchStandings]);
 
+  // Realtime subscription — patch only the updated game, re-fetch standings on status transitions
   useEffect(() => {
     if (!supabase) return;
 
     const subscription = supabase
       .channel('live-score-updates')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games' }, (payload) => {
-        if (payload.new && payload.old) {
-          const newGame = payload.new as { score1: number; score2: number };
-          const oldGame = payload.old as { score1: number; score2: number };
-          if (newGame.score1 !== oldGame.score1 || newGame.score2 !== oldGame.score2) {
-            const refreshGames = async () => {
-              if (!supabase) return;
-              const { data, error } = await supabase.from('game_with_teams').select('*');
-              if (!error && data) {
-                const transformedGames = transformGamesData(data || []);
-                setGames(transformedGames);
-                if (!groupStageCompleted) {
-                  setStandings(calculateStandings(transformedGames));
-                }
-              }
-            };
-            refreshGames();
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'games' },
+        (payload) => {
+          if (!payload.new) return;
+
+          const updated = payload.new as {
+            id: string;
+            score1: number;
+            score2: number;
+            status: string;
+          };
+          const previous = payload.old as { status?: string } | undefined;
+
+          // Patch only this game's scores and status into local state
+          setGames(prev =>
+            prev.map(g =>
+              g.id === updated.id
+                ? { ...g, score1: updated.score1, score2: updated.score2, status: updated.status }
+                : g
+            )
+          );
+
+          // Re-fetch standings only when a game's status transitions to or from Completed
+          const prevStatus = previous?.status;
+          const newStatus = updated.status;
+          if (prevStatus !== newStatus && (prevStatus === 'Completed' || newStatus === 'Completed')) {
+            fetchStandings();
           }
         }
-      })
+      )
       .subscribe();
 
     return () => { subscription.unsubscribe(); };
-  }, [transformGamesData, calculateStandings, groupStageCompleted]);
+  }, [fetchStandings]);
 
+  // Group standings by group_name, ordered by rank (already sorted by RPC)
   const groupedStandings = standings.reduce((acc, team) => {
     if (!acc[team.group_name]) acc[team.group_name] = [];
     acc[team.group_name].push(team);
@@ -296,10 +250,18 @@ export default function BracketPage() {
                       <div>
                         <h4 className="text-sm font-medium text-green-900">Group Stage Completed</h4>
                         <p className="text-sm text-green-700">
-                          All Groups A-D games are finished. Standings are now locked.
+                          All group stage games are finished. Final standings are set.
                         </p>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {!groupStageCompleted && games.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-700 text-center">
+                      Standings update automatically as games complete.
+                    </p>
                   </div>
                 )}
 
@@ -344,7 +306,7 @@ export default function BracketPage() {
 
                       <div className="mb-4 text-center">
                         <p className="text-sm text-gray-600">
-                          Found {filteredGames.length} games • Sorted chronologically by start time
+                          Found {filteredGames.length} games &bull; Sorted chronologically by start time
                         </p>
                       </div>
 
@@ -353,7 +315,9 @@ export default function BracketPage() {
                           <div key={game.id} className="bg-gray-100 border border-gray-400 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-center mb-3">
                               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                game.status === 'Live' ? 'bg-red-500 text-white' : 'bg-gray-500 text-white'
+                                game.status === 'In Progress' ? 'bg-red-500 text-white' :
+                                game.status === 'Completed' ? 'bg-green-600 text-white' :
+                                'bg-gray-500 text-white'
                               }`}>
                                 {game.status}
                               </span>
@@ -411,10 +375,10 @@ export default function BracketPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {teams.map((team, index) => (
-                              <tr key={team.team_id} className={`border-b border-gray-200 ${index === 0 ? 'bg-yellow-50' : ''}`}>
+                            {teams.map((team) => (
+                              <tr key={team.team_id} className={`border-b border-gray-200 ${team.rank === 1 ? 'bg-yellow-50' : ''}`}>
                                 <td className="py-2 px-3 font-medium text-gray-900">
-                                  {index === 0 && <span className="text-yellow-500 mr-1">★</span>}
+                                  {team.rank === 1 && <span className="text-yellow-500 mr-1">★</span>}
                                   {team.team_name}
                                 </td>
                                 <td className="py-2 px-3 text-center text-green-600 font-bold">{team.wins}</td>
