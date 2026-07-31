@@ -28,11 +28,11 @@ export default function Home() {
                 Enter
               </Link>
             </Button>
-            {/* <Button variant="outline" size="lg" className="text-lg px-8 py-3 bg-transparent border-white text-white hover:bg-white hover:text-black transition-colors" asChild>
+            <Button variant="outline" size="lg" className="text-lg px-8 py-3 bg-transparent border-white text-white hover:bg-white hover:text-black transition-colors" asChild>
               <Link href="/staff/login">
                 Staff Login
               </Link>
-            </Button> */}
+            </Button>
           </div>
         </div>
       </section>
