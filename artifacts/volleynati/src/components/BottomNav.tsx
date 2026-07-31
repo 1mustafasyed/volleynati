@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 
 const NAV_LINKS = [
   { label: "ABOUT",    href: "/landing"  },
-  // { label: "BRACKET",  href: "/bracket"  },
+  { label: "BRACKET",  href: "/bracket"  },
   { label: "HISTORY",  href: "/history"  },
   { label: "SPONSORS", href: "/sponsors" },
 ];

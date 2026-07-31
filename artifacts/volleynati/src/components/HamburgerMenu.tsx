@@ -23,7 +23,7 @@ export default function HamburgerMenu() {
           <span className="text-sm tracking-[0.12em] text-[#8C7355]">VOLLEYNATI</span>
         </Link>
 
-        {/* <button
+        <button
           onClick={() => setIsOpen(true)}
           aria-label="Open navigation menu"
           className="flex flex-col gap-1.5 p-2"
@@ -31,7 +31,7 @@ export default function HamburgerMenu() {
           <span className="block w-6 h-0.5 bg-[#4A3728]" />
           <span className="block w-6 h-0.5 bg-[#4A3728]" />
           <span className="block w-6 h-0.5 bg-[#4A3728]" />
-        </button> */}
+        </button>
       </nav>
 
       {/* Slide-out menu overlay */}
@@ -61,7 +61,7 @@ export default function HamburgerMenu() {
             <nav className="flex flex-col px-6 py-6 gap-1">
               {[
                 { label: "Home",     href: "/landing"   },
-                // { label: "Bracket",  href: "/bracket"   },
+                { label: "Bracket",  href: "/bracket"   },
                 { label: "History",  href: "/history"   },
                 { label: "Sponsors", href: "/sponsors"  },
               ].map(({ label, href }) => (
