@@ -213,22 +213,25 @@ export default function BracketPage() {
   }, {} as { [key: string]: TeamStanding[] });
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen text-[#4A3728]" style={{ backgroundColor: "#F5F0E8" }}>
       <HamburgerMenu />
 
-      <div className="px-4 pt-16 pb-6">
+      <div className="px-4 pt-8 pb-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-100 rounded-lg p-1 mb-8">
+
+          {/* Tab bar */}
+          <div className="rounded-lg p-1 mb-8" style={{ backgroundColor: "#E0D8CC" }}>
             <div className="flex">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all duration-200`}
+                  style={
                     activeTab === tab.id
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                      ? { backgroundColor: "#F5F0E8", color: "#4A3728", boxShadow: "0 1px 3px rgba(74,55,40,0.15)" }
+                      : { color: "#8C7355" }
+                  }
                 >
                   {tab.label}
                 </button>
@@ -240,16 +243,16 @@ export default function BracketPage() {
             {activeTab === "Games" && (
               <div className="space-y-6">
                 {groupStageCompleted && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="rounded-lg p-4" style={{ backgroundColor: "#E4EDE4", border: "1px solid #B0C8B0" }}>
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#5A8A5A" }}>
                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-green-900">Group Stage Completed</h4>
-                        <p className="text-sm text-green-700">
+                        <h4 className="text-sm font-medium" style={{ color: "#2A4A2A" }}>Group Stage Completed</h4>
+                        <p className="text-sm" style={{ color: "#4A6A4A" }}>
                           All group stage games are finished. Final standings are set.
                         </p>
                       </div>
@@ -258,39 +261,45 @@ export default function BracketPage() {
                 )}
 
                 {!groupStageCompleted && games.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-700 text-center">
+                  <div className="rounded-lg p-3" style={{ backgroundColor: "#EAE4D8", border: "1px solid #C8BFA8" }}>
+                    <p className="text-sm text-center" style={{ color: "#4A3728" }}>
                       Standings update automatically as games complete.
                     </p>
                   </div>
                 )}
 
-                <div className="bg-gray-50 rounded-lg p-8">
+                <div className="rounded-lg p-6" style={{ backgroundColor: "#EAE4D8" }}>
                   {loading ? (
-                    <div className="text-center">
-                      <p className="text-gray-500">Loading games...</p>
+                    <div className="text-center py-8">
+                      <p style={{ color: "#8C7355" }}>Loading games...</p>
                     </div>
                   ) : !supabase ? (
-                    <div className="text-center">
-                      <p className="text-gray-500">Supabase not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.</p>
+                    <div className="text-center py-8">
+                      <p style={{ color: "#8C7355" }}>Supabase not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.</p>
                     </div>
                   ) : games.length === 0 ? (
-                    <div className="text-center">
-                      <p className="text-gray-500">No games found</p>
+                    <div className="text-center py-8">
+                      <p style={{ color: "#8C7355" }}>No games found</p>
                     </div>
                   ) : (
                     <div>
-                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      {/* Group filter */}
+                      <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: "#E0D8CC", border: "1px solid #C8BFA8" }}>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                           <div className="flex items-center gap-3">
-                            <label htmlFor="group-filter" className="text-sm font-semibold text-blue-900">
+                            <label htmlFor="group-filter" className="text-sm font-semibold" style={{ color: "#4A3728" }}>
                               Filter by Group:
                             </label>
                             <select
                               id="group-filter"
                               value={selectedGroup}
                               onChange={(e) => setSelectedGroup(e.target.value)}
-                              className="px-4 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                              className="px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2"
+                              style={{
+                                border: "1px solid #C8BFA8",
+                                backgroundColor: "#F5F0E8",
+                                color: "#4A3728",
+                              }}
                             >
                               <option value="all">All Groups</option>
                               {availableGroups.map((group) => (
@@ -298,48 +307,59 @@ export default function BracketPage() {
                               ))}
                             </select>
                           </div>
-                          <span className="text-sm text-blue-700 font-medium">
+                          <span className="text-sm font-medium" style={{ color: "#8C7355" }}>
                             {filteredGames.length} of {games.length} games
                           </span>
                         </div>
                       </div>
 
                       <div className="mb-4 text-center">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm" style={{ color: "#8C7355" }}>
                           Found {filteredGames.length} games &bull; Sorted chronologically by start time
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredGames.map((game) => (
-                          <div key={game.id} className="bg-gray-100 border border-gray-400 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                          <div
+                            key={game.id}
+                            className="rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                            style={{ backgroundColor: "#F5F0E8", border: "1px solid #C8BFA8" }}
+                          >
                             <div className="flex justify-between items-center mb-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                game.status === 'In Progress' ? 'bg-red-500 text-white' :
-                                game.status === 'Completed' ? 'bg-green-600 text-white' :
-                                'bg-gray-500 text-white'
-                              }`}>
+                              <span
+                                className="px-2 py-1 rounded-full text-xs font-semibold text-white"
+                                style={{
+                                  backgroundColor:
+                                    game.status === 'In Progress' ? '#C0392B' :
+                                    game.status === 'Completed'   ? '#5A8A5A' :
+                                    '#8C7355'
+                                }}
+                              >
                                 {game.status}
                               </span>
-                              <span className="text-gray-600 text-xs font-medium">
+                              <span className="text-xs font-medium" style={{ color: "#8C7355" }}>
                                 {game.start_time_formatted}
                               </span>
                             </div>
 
                             <div className="space-y-3">
                               <div className="flex justify-between items-center">
-                                <span className="font-semibold text-sm truncate max-w-[80%]">{game.team1_name}</span>
-                                <span className="text-lg font-bold text-blue-600">{game.score1}</span>
+                                <span className="font-semibold text-sm truncate max-w-[80%]" style={{ color: "#1C1A16" }}>{game.team1_name}</span>
+                                <span className="text-lg font-bold" style={{ color: "#4A3728" }}>{game.score1}</span>
                               </div>
-                              <div className="text-center text-gray-500 text-xs font-medium">VS</div>
+                              <div className="text-center text-xs font-medium" style={{ color: "#8C7355" }}>VS</div>
                               <div className="flex justify-between items-center">
-                                <span className="font-semibold text-sm truncate max-w-[80%]">{game.team2_name}</span>
-                                <span className="text-lg font-bold text-blue-600">{game.score2}</span>
+                                <span className="font-semibold text-sm truncate max-w-[80%]" style={{ color: "#1C1A16" }}>{game.team2_name}</span>
+                                <span className="text-lg font-bold" style={{ color: "#4A3728" }}>{game.score2}</span>
                               </div>
                             </div>
 
-                            <div className="mt-3 pt-3 border-t border-gray-300">
-                              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                            <div className="mt-3 pt-3" style={{ borderTop: "1px solid #C8BFA8" }}>
+                              <span
+                                className="text-xs px-2 py-1 rounded"
+                                style={{ color: "#4A3728", backgroundColor: "#E0D8CC" }}
+                              >
                                 {game.group_name || 'Group Unknown'}
                               </span>
                             </div>
@@ -355,37 +375,46 @@ export default function BracketPage() {
             {activeTab === "Standings" && (
               <div className="space-y-8">
                 {loading ? (
-                  <p className="text-center text-gray-500">Loading standings...</p>
+                  <p className="text-center" style={{ color: "#8C7355" }}>Loading standings...</p>
                 ) : Object.keys(groupedStandings).length === 0 ? (
-                  <p className="text-center text-gray-500">No standings data available</p>
+                  <p className="text-center" style={{ color: "#8C7355" }}>No standings data available</p>
                 ) : (
                   Object.entries(groupedStandings).sort(([a], [b]) => a.localeCompare(b)).map(([groupName, teams]) => (
-                    <div key={groupName} className="bg-gray-50 rounded-lg p-6">
-                      <h3 className="text-xl font-bold text-black mb-4">{groupName}</h3>
+                    <div key={groupName} className="rounded-lg p-6" style={{ backgroundColor: "#EAE4D8" }}>
+                      <h3 className="text-xl font-bold mb-4" style={{ color: "#4A3728" }}>{groupName}</h3>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-gray-300">
-                              <th className="text-left py-2 px-3 font-semibold text-gray-700">Team</th>
-                              <th className="text-center py-2 px-3 font-semibold text-gray-700">W</th>
-                              <th className="text-center py-2 px-3 font-semibold text-gray-700">L</th>
-                              <th className="text-center py-2 px-3 font-semibold text-gray-700">PF</th>
-                              <th className="text-center py-2 px-3 font-semibold text-gray-700">PA</th>
-                              <th className="text-center py-2 px-3 font-semibold text-gray-700">+/-</th>
+                            <tr style={{ borderBottom: "1px solid #C8BFA8" }}>
+                              <th className="text-left py-2 px-3 font-semibold" style={{ color: "#8C7355" }}>Team</th>
+                              <th className="text-center py-2 px-3 font-semibold" style={{ color: "#8C7355" }}>W</th>
+                              <th className="text-center py-2 px-3 font-semibold" style={{ color: "#8C7355" }}>L</th>
+                              <th className="text-center py-2 px-3 font-semibold" style={{ color: "#8C7355" }}>PF</th>
+                              <th className="text-center py-2 px-3 font-semibold" style={{ color: "#8C7355" }}>PA</th>
+                              <th className="text-center py-2 px-3 font-semibold" style={{ color: "#8C7355" }}>+/-</th>
                             </tr>
                           </thead>
                           <tbody>
                             {teams.map((team) => (
-                              <tr key={team.team_id} className={`border-b border-gray-200 ${team.rank === 1 ? 'bg-yellow-50' : ''}`}>
-                                <td className="py-2 px-3 font-medium text-gray-900">
-                                  {team.rank === 1 && <span className="text-yellow-500 mr-1">★</span>}
+                              <tr
+                                key={team.team_id}
+                                style={{
+                                  borderBottom: "1px solid #D4CABC",
+                                  backgroundColor: team.rank === 1 ? "#F0EAD0" : "transparent"
+                                }}
+                              >
+                                <td className="py-3 px-3 font-medium" style={{ color: "#4A3728" }}>
+                                  {team.rank === 1 && <span className="mr-1" style={{ color: "#C8A84B" }}>★</span>}
                                   {team.team_name}
                                 </td>
-                                <td className="py-2 px-3 text-center text-green-600 font-bold">{team.wins}</td>
-                                <td className="py-2 px-3 text-center text-red-600 font-bold">{team.losses}</td>
-                                <td className="py-2 px-3 text-center text-gray-700">{team.points_scored}</td>
-                                <td className="py-2 px-3 text-center text-gray-700">{team.points_allowed}</td>
-                                <td className={`py-2 px-3 text-center font-bold ${team.point_differential >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <td className="py-3 px-3 text-center font-bold" style={{ color: "#5A8A5A" }}>{team.wins}</td>
+                                <td className="py-3 px-3 text-center font-bold" style={{ color: "#C0392B" }}>{team.losses}</td>
+                                <td className="py-3 px-3 text-center" style={{ color: "#8C7355" }}>{team.points_scored}</td>
+                                <td className="py-3 px-3 text-center" style={{ color: "#8C7355" }}>{team.points_allowed}</td>
+                                <td
+                                  className="py-3 px-3 text-center font-bold"
+                                  style={{ color: team.point_differential >= 0 ? "#5A8A5A" : "#C0392B" }}
+                                >
                                   {team.point_differential >= 0 ? '+' : ''}{team.point_differential}
                                 </td>
                               </tr>
@@ -400,9 +429,9 @@ export default function BracketPage() {
             )}
 
             {activeTab === "Bracket" && (
-              <div className="bg-gray-50 rounded-lg p-8 text-center">
-                <h3 className="text-xl font-bold text-black mb-4">Tournament Bracket</h3>
-                <p className="text-gray-500">
+              <div className="rounded-lg p-8 text-center" style={{ backgroundColor: "#EAE4D8" }}>
+                <h3 className="text-xl font-bold mb-4" style={{ color: "#4A3728" }}>Tournament Bracket</h3>
+                <p style={{ color: "#8C7355" }}>
                   {groupStageCompleted
                     ? "Bracket is now available. Check back for playoff matchups."
                     : "The bracket will be available after the group stage is completed."}

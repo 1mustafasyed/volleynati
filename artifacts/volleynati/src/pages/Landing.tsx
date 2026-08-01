@@ -40,24 +40,20 @@ export default function LandingPage() {
 
         {/* CTAs — after context is established */}
         <div className="flex flex-col gap-3 mb-8">
-          <a
-            href="https://luma.com/wub3mkrk"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/sponsors"
             className="w-full text-center text-base py-4 tracking-[0.08em] no-underline transition-opacity hover:opacity-80"
             style={{ backgroundColor: "#4A3728", color: "#F5F0E8" }}
           >
-            REGISTER YOUR TEAM
-          </a>
-          <a
-            href="https://luma.com/h8ukw6a4"
-            target="_blank"
-            rel="noopener noreferrer"
+            SPONSORS
+          </Link>
+          <Link
+            href="/bracket"
             className="w-full text-center text-base py-4 tracking-[0.08em] no-underline transition-opacity hover:opacity-80"
             style={{ border: "1px solid #C8BFA8", color: "#4A3728" }}
           >
-            GET TICKETS
-          </a>
+            BRACKET
+          </Link>
         </div>
       </div>
 

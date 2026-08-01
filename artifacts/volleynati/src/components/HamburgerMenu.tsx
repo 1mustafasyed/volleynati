@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Link } from "wouter";
 
+const NAV_LINKS = [
+  { label: "Home",     href: "/landing"  },
+  { label: "Bracket",  href: "/bracket"  },
+  { label: "History",  href: "/history"  },
+  { label: "Sponsors", href: "/sponsors" },
+];
+
 export default function HamburgerMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const close = () => setIsOpen(false);
@@ -12,8 +19,8 @@ export default function HamburgerMenu() {
         AUG 8, 2026 · JAYCEE PARK · RALEIGH NC
       </div>
 
-      {/* Inline nav bar */}
-      <nav className="flex items-center justify-between px-5 py-4 bg-[#F5F0E8] border-b border-[#C8BFA8]">
+      {/* Nav bar — relative so the dropdown anchors to it; z-50 to sit above the backdrop */}
+      <nav className="relative z-50 flex items-center justify-between px-5 py-4 bg-[#F5F0E8] border-b border-[#C8BFA8]">
         <Link href="/landing" onClick={close} className="flex items-center gap-2 no-underline">
           <img
             src="/landing/VolleyNatiAssetsfireVolley-icon.png"
@@ -23,72 +30,61 @@ export default function HamburgerMenu() {
           <span className="text-sm tracking-[0.12em] text-[#8C7355]">VOLLEYNATI</span>
         </Link>
 
+        {/* Hamburger button — stays on the right, animates to × when open */}
         <button
-          onClick={() => setIsOpen(true)}
-          aria-label="Open navigation menu"
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isOpen}
           className="flex flex-col gap-1.5 p-2"
         >
-          <span className="block w-6 h-0.5 bg-[#4A3728]" />
-          <span className="block w-6 h-0.5 bg-[#4A3728]" />
-          <span className="block w-6 h-0.5 bg-[#4A3728]" />
-        </button>
-      </nav>
-
-      {/* Slide-out menu overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={close}
+          <span
+            className="block w-6 h-0.5 bg-[#4A3728] transition-all duration-300 origin-center"
+            style={{ transform: isOpen ? "rotate(45deg) translateY(8px)" : "none" }}
           />
+          <span
+            className="block w-6 h-0.5 bg-[#4A3728] transition-all duration-300"
+            style={{ opacity: isOpen ? 0 : 1 }}
+          />
+          <span
+            className="block w-6 h-0.5 bg-[#4A3728] transition-all duration-300 origin-center"
+            style={{ transform: isOpen ? "rotate(-45deg) translateY(-8px)" : "none" }}
+          />
+        </button>
 
-          {/* Drawer */}
-          <div className="absolute top-0 left-0 h-full w-72 bg-[#F5F0E8] shadow-xl flex flex-col">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-[#C8BFA8]">
-              <span className="text-sm tracking-[0.12em] text-[#8C7355]">MENU</span>
-              <button
-                onClick={close}
-                aria-label="Close menu"
-                className="text-[#4A3728] text-2xl leading-none"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Nav links */}
-            <nav className="flex flex-col px-6 py-6 gap-1">
-              {[
-                { label: "Home",     href: "/landing"   },
-                { label: "Bracket",  href: "/bracket"   },
-                { label: "History",  href: "/history"   },
-                { label: "Sponsors", href: "/sponsors"  },
-              ].map(({ label, href }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={close}
-                  className="text-[#1C1A16] text-lg tracking-[0.08em] py-4 border-b border-[#C8BFA8] last:border-0 no-underline hover:text-[#4A3728] transition-colors"
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Staff link at bottom */}
-            <div className="mt-auto px-6 pb-8">
+        {/* Full-width dropdown — drops down from beneath the nav bar */}
+        <div
+          className="absolute top-full left-0 w-full bg-[#F5F0E8] border-b border-[#C8BFA8] shadow-lg overflow-hidden transition-all duration-300 ease-in-out"
+          style={{
+            maxHeight: isOpen ? "320px" : "0px",
+            opacity: isOpen ? 1 : 0,
+          }}
+        >
+          <div className="flex flex-col px-6 py-2">
+            {NAV_LINKS.map(({ label, href }, i) => (
               <Link
-                href="/staff/login"
+                key={href}
+                href={href}
                 onClick={close}
-                className="text-[#8C7355] text-xs tracking-[0.15em] no-underline hover:text-[#4A3728] transition-colors"
+                className="text-[#1C1A16] text-lg tracking-[0.08em] py-4 border-b border-[#C8BFA8] last:border-0 no-underline hover:text-[#4A3728] transition-all duration-300"
+                style={{
+                  transitionDelay: isOpen ? `${i * 60 + 60}ms` : "0ms",
+                  opacity: isOpen ? 1 : 0,
+                  transform: isOpen ? "translateY(0)" : "translateY(-6px)",
+                }}
               >
-                STAFF LOGIN
+                {label}
               </Link>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </nav>
+
+      {/* Backdrop — sits behind the dropdown (z-40) and closes the menu on tap */}
+      <div
+        className="fixed inset-0 z-40 transition-opacity duration-300"
+        style={{ opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? "auto" : "none" }}
+        onClick={close}
+      />
     </>
   );
 }
