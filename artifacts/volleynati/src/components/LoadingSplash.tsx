@@ -8,7 +8,7 @@ export default function LoadingSplash() {
   return (
     <motion.div
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
-      style={{ backgroundColor: "rgba(28, 26, 22, 0.78)" }}
+      style={{ backgroundColor: "#F5F0E8" }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -24,7 +24,7 @@ export default function LoadingSplash() {
       />
       <motion.p
         className="text-xs tracking-[0.25em]"
-        style={{ color: "#F5F0E8" }}
+        style={{ color: "#8C7355" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.15, delay: 0.15 }}
