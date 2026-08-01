@@ -1,33 +1,21 @@
-import { Link, useLocation } from "wouter";
-
-const NAV_LINKS = [
-  { label: "BRACKET",    href: "/bracket"      },
-  { label: "HISTORY",    href: "/history"      },
-  { label: "SPONSORS",   href: "/sponsors"     },
-  { label: "STAFF LOGIN", href: "/staff/login" },
-];
+import { Link } from "wouter";
 
 export default function BottomNav() {
-  const [location] = useLocation();
-
   return (
     <div
-      className="px-5 py-5 flex justify-between border-t w-full max-w-2xl mx-auto"
+      className="w-full max-w-2xl mx-auto px-5 pt-6 pb-8 text-center border-t"
       style={{ borderColor: "#C8BFA8" }}
     >
-      {NAV_LINKS.map(({ label, href }) => {
-        const active = location === href;
-        return (
-          <Link
-            key={href}
-            href={href}
-            className="text-xs tracking-[0.12em] no-underline transition-colors"
-            style={{ color: active ? "#1C1A16" : "#8C7355", fontWeight: active ? 600 : 400 }}
-          >
-            {label}
-          </Link>
-        );
-      })}
+      <Link
+        href="/staff/login"
+        className="text-xs tracking-[0.15em] no-underline transition-colors block mb-3 hover:text-[#4A3728]"
+        style={{ color: "#8C7355" }}
+      >
+        STAFF LOGIN
+      </Link>
+      <p className="text-xs tracking-[0.12em]" style={{ color: "#C8BFA8" }}>
+        Volleynati 2026
+      </p>
     </div>
   );
 }
