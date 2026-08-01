@@ -9,10 +9,10 @@ export default function LoadingSplash() {
     <motion.div
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
       style={{ backgroundColor: "#F5F0E8" }}
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.18, ease: "easeInOut" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
     >
       <motion.img
         src="/favicon.png"
