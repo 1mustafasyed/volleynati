@@ -65,6 +65,8 @@ export default function HamburgerMenu() {
                 key={href}
                 href={href}
                 onClick={close}
+                tabIndex={isOpen ? 0 : -1}
+                aria-hidden={!isOpen}
                 className="text-[#1C1A16] text-lg tracking-[0.08em] py-4 border-b border-[#C8BFA8] last:border-0 no-underline hover:text-[#4A3728] transition-all duration-300"
                 style={{
                   transitionDelay: isOpen ? `${i * 60 + 60}ms` : "0ms",

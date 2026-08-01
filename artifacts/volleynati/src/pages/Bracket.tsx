@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/lib/supabase";
 
 interface Game {
@@ -441,6 +442,7 @@ export default function BracketPage() {
           </div>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }
