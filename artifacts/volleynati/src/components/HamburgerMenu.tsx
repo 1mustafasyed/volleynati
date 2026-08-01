@@ -21,14 +21,14 @@ export default function HamburgerMenu() {
 
       {/* Nav bar — relative so the dropdown anchors to it; z-50 to sit above the backdrop */}
       <nav className="relative z-50 flex items-center justify-between px-5 py-4 bg-[#F5F0E8] border-b border-[#C8BFA8]">
-        <Link href="/landing" onClick={close} className="flex items-center gap-2 no-underline">
+        <a href="https://volleynati.com" className="flex items-center gap-2 no-underline" onClick={close}>
           <img
             src="/landing/VolleyNatiAssetsfireVolley-icon.png"
             alt="Volleynati logo"
             className="w-6 h-6 object-contain"
           />
           <span className="text-sm tracking-[0.12em] text-[#8C7355]">VOLLEYNATI</span>
-        </Link>
+        </a>
 
         {/* Hamburger button — stays on the right, animates to × when open */}
         <button
