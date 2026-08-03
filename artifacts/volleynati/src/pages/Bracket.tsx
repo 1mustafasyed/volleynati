@@ -164,7 +164,7 @@ export default function BracketPage() {
     fetchStandings();
   }, [transformGamesData, fetchStandings]);
 
-  // Realtime subscription — patch only the updated game, re-fetch standings on status transitions
+   // Realtime subscription — patch only the updated game, re-fetch standings on status transitions
   useEffect(() => {
     if (!supabase) return;
 
@@ -187,7 +187,7 @@ export default function BracketPage() {
           // Patch only this game's scores and status into local state
           setGames(prev =>
             prev.map(g =>
-              g.id === updated.id
+               g.game_id === updated.id
                 ? { ...g, score1: updated.score1, score2: updated.score2, status: updated.status }
                 : g
             )
@@ -201,7 +201,19 @@ export default function BracketPage() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status, error) => {
+        if (status === 'SUBSCRIBED') {
+          console.info('Live score updates connected.');
+          return;
+        }
+
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('Live score updates connection failed:', { status, error });
+          return;
+        }
+
+        console.info('Live score updates status:', status);
+      });
 
     return () => { subscription.unsubscribe(); };
   }, [fetchStandings]);
