@@ -4,13 +4,13 @@ import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/lib/supabase";
 
 interface Game {
-  id: string;
-  team1_id: string;
-  team2_id: string;
+  game_id: string;
+  team1_id: string | null;
+  team2_id: string | null;
   team1_name: string | null;
   team2_name: string | null;
-  score1: number;
-  score2: number;
+  score1: number | null;
+  score2: number | null;
   status: string;
   start_time: string | null;
   start_time_formatted: string;
@@ -18,8 +18,17 @@ interface Game {
   bracket_id: string | null;
   bracket_name: string | null;
   group_name: string | null;
+  playoff_slot: string | null;
   updated_by: string | null;
   updated_at: string;
+}
+
+interface PlayoffStructure {
+  slot: string;
+  round: string;
+  feeder1: string;
+  feeder2: string;
+  sort_order: number;
 }
 
 interface TeamStanding {
@@ -40,6 +49,7 @@ export default function BracketPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [standings, setStandings] = useState<TeamStanding[]>([]);
+  const [playoffStructure, setPlayoffStructure] = useState<PlayoffStructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
@@ -50,14 +60,16 @@ export default function BracketPage() {
     { id: "Bracket", label: "Bracket" }
   ];
 
-  // Derive whether all group-stage games are completed from local state
+  // Retain the existing group-stage completion message on the Games tab.
   const groupStageCompleted = games.length > 0 && (() => {
     const groupGames = games.filter(game =>
-      game.bracket_name === 'Group Stage' ||
-      (game.group_name && ['Group A', 'Group B', 'Group C', 'Group D'].includes(game.group_name))
+      game.bracket_name === "Group Stage" ||
+      (game.group_name && ["Group A", "Group B", "Group C", "Group D"].includes(game.group_name))
     );
-    return groupGames.length > 0 && groupGames.every(game => game.status === 'Completed');
+    return groupGames.length > 0 && groupGames.every(game => game.status === "Completed");
   })();
+
+  const playoffRounds = ["Play-In", "Quarterfinal", "Semifinal", "Final"];
 
   const formatStartTime = (timestamp: string) => {
     try {
@@ -93,8 +105,8 @@ export default function BracketPage() {
     return rawGames.map(game => ({
       ...game,
       start_time_formatted: game.start_time ? formatStartTime(game.start_time) : 'TBD',
-      team1_name: game.team1_name || `Team ${game.team1_id?.slice(0, 8)}`,
-      team2_name: game.team2_name || `Team ${game.team2_id?.slice(0, 8)}`
+      team1_name: game.team1_name || (game.team1_id ? `Team ${game.team1_id.slice(0, 8)}` : null),
+      team2_name: game.team2_name || (game.team2_id ? `Team ${game.team2_id.slice(0, 8)}` : null)
     }));
   }, []);
 
@@ -131,40 +143,56 @@ export default function BracketPage() {
     }
   }, []);
 
-  // Initial data load
-  useEffect(() => {
-    const fetchGames = async () => {
-      if (!supabase) {
-        setLoading(false);
+  const fetchGames = useCallback(async () => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.from('game_with_teams').select('*');
+      if (error) {
+        console.error('Error fetching games:', error);
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('game_with_teams')
-          .select('*');
+      const transformedGames = transformGamesData((data || []) as Game[]);
+      setGames(transformedGames);
+      const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
+      setAvailableGroups(groups);
+    } catch (error) {
+      console.error('Error fetching games:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [transformGamesData]);
 
-        if (error) {
-          console.error('Error fetching games:', error);
-        } else {
-          const transformedGames = transformGamesData(data || []);
-          setGames(transformedGames);
+  const fetchPlayoffStructure = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error } = await supabase
+        .from('playoff_structure')
+        .select('slot, round, feeder1, feeder2, sort_order')
+        .order('sort_order');
 
-          const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
-          setAvailableGroups(groups);
-        }
-      } catch (error) {
-        console.error('Error fetching games:', error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching playoff structure:', error);
+        return;
       }
-    };
+      setPlayoffStructure((data || []) as PlayoffStructure[]);
+    } catch (error) {
+      console.error('Error fetching playoff structure:', error);
+    }
+  }, []);
 
+  // Initial public data load
+  useEffect(() => {
     fetchGames();
     fetchStandings();
-  }, [transformGamesData, fetchStandings]);
+    fetchPlayoffStructure();
+  }, [fetchGames, fetchStandings, fetchPlayoffStructure]);
 
-   // Realtime subscription — patch only the updated game, re-fetch standings on status transitions
+   // Realtime subscription keeps group scores and newly-created playoff games current.
   useEffect(() => {
     if (!supabase) return;
 
@@ -201,6 +229,17 @@ export default function BracketPage() {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'games' },
+        () => {
+          // The base-table event has IDs but not the joined team names. Re-read
+          // the public view so newly generated playoff games appear complete.
+          console.info('New game created; refreshing the public bracket.');
+          fetchGames();
+          fetchStandings();
+        }
+      )
       .subscribe((status, error) => {
         if (status === 'SUBSCRIBED') {
           console.info('Live score updates connected.');
@@ -216,7 +255,27 @@ export default function BracketPage() {
       });
 
     return () => { subscription.unsubscribe(); };
-  }, [fetchStandings]);
+  }, [fetchGames, fetchStandings]);
+
+  const gamesByPlayoffSlot = new Map(
+    games
+      .filter((game) => game.playoff_slot)
+      .map((game) => [game.playoff_slot as string, game])
+  );
+
+  const friendlyFeeder = (feeder: string) => {
+    if (/^[A-Z]\d+$/.test(feeder)) {
+      const [, group, place] = feeder.match(/^([A-Z])(\d+)$/)!;
+      const ordinal = place === "1" ? "1st" : place === "2" ? "2nd" : place === "3" ? "3rd" : `${place}th`;
+      return `Group ${group} ${ordinal} place`;
+    }
+    return `Winner of ${feeder}`;
+  };
+
+  const winnerTeamId = (game: Game) => {
+    if (game.status !== "Completed" || game.score1 === game.score2) return null;
+    return game.score1 !== null && game.score2 !== null && game.score1 > game.score2 ? game.team1_id : game.team2_id;
+  };
 
   // Group standings by group_name, ordered by rank (already sorted by RPC)
   const groupedStandings = standings.reduce((acc, team) => {
@@ -335,7 +394,7 @@ export default function BracketPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredGames.map((game) => (
                           <div
-                            key={game.id}
+                            key={game.game_id}
                             className="rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
                             style={{ backgroundColor: "#F5F0E8", border: "1px solid #C8BFA8" }}
                           >
@@ -442,13 +501,119 @@ export default function BracketPage() {
             )}
 
             {activeTab === "Bracket" && (
-              <div className="rounded-lg p-8 text-center" style={{ backgroundColor: "#EAE4D8" }}>
-                <h3 className="text-xl font-bold mb-4" style={{ color: "#4A3728" }}>Tournament Bracket</h3>
-                <p style={{ color: "#8C7355" }}>
-                  {groupStageCompleted
-                    ? "Bracket is now available. Check back for playoff matchups."
-                    : "The bracket will be available after the group stage is completed."}
-                </p>
+              <div className="rounded-lg p-5 sm:p-6" style={{ backgroundColor: "#EAE4D8" }}>
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold" style={{ color: "#4A3728" }}>Tournament Bracket</h3>
+                  <p className="mt-1 text-sm" style={{ color: "#8C7355" }}>
+                    Matchups and scores update automatically as teams advance.
+                  </p>
+                </div>
+
+                {loading ? (
+                  <p className="py-8 text-center" style={{ color: "#8C7355" }}>Loading bracket...</p>
+                ) : !supabase ? (
+                  <p className="py-8 text-center" style={{ color: "#8C7355" }}>
+                    Supabase is not configured.
+                  </p>
+                ) : playoffStructure.length === 0 ? (
+                  <p className="py-8 text-center" style={{ color: "#8C7355" }}>
+                    The playoff bracket is not available yet.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto pb-3">
+                    <div className="grid min-w-[980px] grid-cols-4 gap-5">
+                      {playoffRounds.map((round) => {
+                        const slots = playoffStructure
+                          .filter((structure) => structure.round === round)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+
+                        return (
+                          <section key={round} className="min-w-0">
+                            <h4 className="mb-3 text-center text-sm font-bold tracking-[0.08em]" style={{ color: "#4A3728" }}>
+                              {round.toUpperCase()}
+                            </h4>
+                            <div
+                              className={`flex min-h-[420px] flex-col gap-4 ${
+                                round === "Quarterfinal" ? "justify-around py-8" :
+                                round === "Semifinal" ? "justify-around py-20" :
+                                round === "Final" ? "justify-center py-32" : ""
+                              }`}
+                            >
+                              {slots.map((structure) => {
+                                const game = gamesByPlayoffSlot.get(structure.slot);
+                                const winningTeamId = game ? winnerTeamId(game) : null;
+
+                                return (
+                                  <article
+                                    key={structure.slot}
+                                    className="rounded-lg p-3 shadow-sm"
+                                    style={{ backgroundColor: "#F5F0E8", border: "1px solid #C8BFA8" }}
+                                  >
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                      <span className="text-xs font-bold tracking-[0.08em]" style={{ color: "#8C7355" }}>
+                                        {structure.slot}
+                                      </span>
+                                      {game ? (
+                                        <span
+                                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                                          style={{
+                                            backgroundColor:
+                                              game.status === "In Progress" ? "#C0392B" :
+                                              game.status === "Completed" ? "#5A8A5A" : "#8C7355",
+                                          }}
+                                        >
+                                          {game.status}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] font-semibold" style={{ color: "#8C7355" }}>TBD</span>
+                                      )}
+                                    </div>
+
+                                    {game ? (
+                                      <div className="space-y-1.5">
+                                        {[
+                                          { id: game.team1_id, name: game.team1_name || friendlyFeeder(structure.feeder1), score: game.score1 },
+                                          { id: game.team2_id, name: game.team2_name || friendlyFeeder(structure.feeder2), score: game.score2 },
+                                        ].map((team, index) => {
+                                          const isWinner = winningTeamId === team.id;
+                                          return (
+                                            <div
+                                              key={`${structure.slot}-team-${index}`}
+                                              className="flex items-center justify-between gap-2 rounded px-2 py-1.5"
+                                              style={{
+                                                backgroundColor: isWinner ? "#E4EDE4" : "transparent",
+                                                color: isWinner ? "#2A4A2A" : "#1C1A16",
+                                              }}
+                                            >
+                                              <span className="min-w-0 truncate text-xs font-semibold">
+                                                {isWinner && <span aria-label="Winner" className="mr-1">★</span>}
+                                                {team.name}
+                                              </span>
+                                              <span className="text-base font-bold">{team.score ?? 0}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <p className="rounded px-2 py-1.5 text-xs" style={{ backgroundColor: "#EAE4D8", color: "#4A3728" }}>
+                                          {friendlyFeeder(structure.feeder1)}
+                                        </p>
+                                        <p className="rounded px-2 py-1.5 text-xs" style={{ backgroundColor: "#EAE4D8", color: "#4A3728" }}>
+                                          {friendlyFeeder(structure.feeder2)}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </article>
+                                );
+                              })}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
