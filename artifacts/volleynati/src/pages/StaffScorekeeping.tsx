@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -20,6 +20,7 @@ interface Game {
   updated_by: string | null;
   updated_at: string;
   group_name: string | null;
+  bracket_name: string | null;
 }
 
 export default function ScorekeepingPage() {
@@ -27,8 +28,10 @@ export default function ScorekeepingPage() {
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [selectedPlayoffRound, setSelectedPlayoffRound] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [, setLocation] = useLocation();
+  const playoffRounds = ["Play-In", "Quarterfinal", "Semifinal", "Final"];
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -68,39 +71,64 @@ export default function ScorekeepingPage() {
   };
 
   useEffect(() => {
-    if (selectedGroup === "all") {
-      setFilteredGames(games);
-    } else {
-      setFilteredGames(games.filter(game => game.group_name === selectedGroup));
+    let filtered = [...games];
+    if (selectedGroup !== "all") {
+      filtered = filtered.filter(game => game.group_name === selectedGroup);
     }
-  }, [games, selectedGroup]);
+    if (selectedPlayoffRound !== "all") {
+      filtered = filtered.filter(game => game.bracket_name === selectedPlayoffRound);
+    }
+    setFilteredGames(filtered);
+  }, [games, selectedGroup, selectedPlayoffRound]);
+
+  const fetchGames = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error } = await supabase.from('game_with_teams').select('*');
+      if (error) {
+        console.error('Error fetching games:', error);
+        return;
+      }
+      const transformedGames = transformGamesData(data || []);
+      setGames(transformedGames);
+      const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
+      setAvailableGroups(groups);
+    } catch {
+      console.error('Error fetching games: Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchGames = async () => {
-      if (!supabase) return;
-
-      try {
-        const { data, error } = await supabase.from('game_with_teams').select('*');
-
-        if (error) {
-          console.error('Error fetching games:', error);
-          setLoading(false);
-          return;
-        } else {
-          const transformedGames = transformGamesData(data || []);
-          setGames(transformedGames);
-          const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
-          setAvailableGroups(groups);
-        }
-      } catch {
-        console.error('Error fetching games: Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchGames();
-  }, []);
+  }, [fetchGames]);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    const subscription = supabase
+      .channel('staff-scorekeeping-games')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'games' },
+        () => {
+          console.info('New game created; refreshing scorekeeping list.');
+          fetchGames();
+        }
+      )
+      .subscribe((status, error) => {
+        if (status === 'SUBSCRIBED') {
+          console.info('Staff scorekeeping live updates connected.');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('Staff scorekeeping live updates failed:', { status, error });
+        }
+      });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchGames]);
 
   if (loading) {
     return (
@@ -151,6 +179,22 @@ export default function ScorekeepingPage() {
                 ))}
               </select>
             </div>
+            <div className="flex items-center gap-3">
+              <label htmlFor="playoff-round-filter" className="text-sm font-semibold text-blue-900">
+                Playoff Round:
+              </label>
+              <select
+                id="playoff-round-filter"
+                value={selectedPlayoffRound}
+                onChange={(e) => setSelectedPlayoffRound(e.target.value)}
+                className="px-4 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+              >
+                <option value="all">All Rounds</option>
+                {playoffRounds.map((round) => (
+                  <option key={round} value={round}>{round}</option>
+                ))}
+              </select>
+            </div>
             <span className="text-sm text-blue-700 font-medium">
               {filteredGames.length} of {games.length} games
             </span>
@@ -160,7 +204,11 @@ export default function ScorekeepingPage() {
         {filteredGames.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">
-              {selectedGroup === "all" ? "No games found" : `No games found in ${selectedGroup}`}
+              {selectedGroup !== "all"
+                ? `No games found in ${selectedGroup}`
+                : selectedPlayoffRound !== "all"
+                  ? `No games found in the ${selectedPlayoffRound}`
+                  : "No games found"}
             </p>
           </div>
         ) : (
@@ -207,7 +255,9 @@ export default function ScorekeepingPage() {
 
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                      {game.group_name || 'Group Unknown'}
+                      {game.bracket_name && playoffRounds.includes(game.bracket_name)
+                        ? game.bracket_name
+                        : game.group_name || 'Group Unknown'}
                     </span>
                   </div>
                 </div>

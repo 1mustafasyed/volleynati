@@ -52,6 +52,7 @@ export default function BracketPage() {
   const [playoffStructure, setPlayoffStructure] = useState<PlayoffStructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [selectedPlayoffRound, setSelectedPlayoffRound] = useState<string>("all");
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
 
   const tabs = [
@@ -120,13 +121,16 @@ export default function BracketPage() {
   }, []);
 
   useEffect(() => {
-    let filtered = games;
+    let filtered = [...games];
     if (selectedGroup !== "all") {
-      filtered = games.filter(game => game.group_name === selectedGroup);
+      filtered = filtered.filter(game => game.group_name === selectedGroup);
+    }
+    if (selectedPlayoffRound !== "all") {
+      filtered = filtered.filter(game => game.bracket_name === selectedPlayoffRound);
     }
     const sortedFilteredGames = sortGamesByTime(filtered);
     setFilteredGames(sortedFilteredGames);
-  }, [games, selectedGroup, sortGamesByTime]);
+  }, [games, selectedGroup, selectedPlayoffRound, sortGamesByTime]);
 
   // Fetch standings from the group_standings database function
   const fetchStandings = useCallback(async () => {
@@ -225,6 +229,9 @@ export default function BracketPage() {
           const prevStatus = previous?.status;
           const newStatus = updated.status;
           if (prevStatus !== newStatus && (prevStatus === 'Completed' || newStatus === 'Completed')) {
+             // Advancement can populate a later playoff game with teams. Refresh
+             // the joined view so all bracket cards receive those team names.
+             fetchGames();
             fetchStandings();
           }
         }
@@ -270,6 +277,26 @@ export default function BracketPage() {
       return `Group ${group} ${ordinal} place`;
     }
     return `Winner of ${feeder}`;
+  };
+
+  const seededTeamLabel = (feeder: string) => {
+    if (!/^[A-Z]\d+$/.test(feeder) || !groupStageCompleted) return friendlyFeeder(feeder);
+
+    const [, groupLetter, rank] = feeder.match(/^([A-Z])(\d+)$/)!;
+    const team = standings.find(
+      (standing) => standing.group_name === `Group ${groupLetter}` && standing.rank === Number(rank)
+    );
+    return team ? `${team.team_name} (${groupLetter}${rank})` : friendlyFeeder(feeder);
+  };
+
+  const feederLabel = (feeder: string) => {
+    const feederGame = gamesByPlayoffSlot.get(feeder);
+    if (feederGame?.status === "Completed") {
+      const winningId = winnerTeamId(feederGame);
+      if (winningId === feederGame.team1_id) return feederGame.team1_name || `Winner of ${feeder}`;
+      if (winningId === feederGame.team2_id) return feederGame.team2_name || `Winner of ${feeder}`;
+    }
+    return /^[A-Z]\d+$/.test(feeder) ? seededTeamLabel(feeder) : friendlyFeeder(feeder);
   };
 
   const winnerTeamId = (game: Game) => {
@@ -355,7 +382,7 @@ export default function BracketPage() {
                     </div>
                   ) : (
                     <div>
-                      {/* Group filter */}
+                      {/* Group and playoff-round filters */}
                       <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: "#E0D8CC", border: "1px solid #C8BFA8" }}>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                           <div className="flex items-center gap-3">
@@ -376,6 +403,27 @@ export default function BracketPage() {
                               <option value="all">All Groups</option>
                               {availableGroups.map((group) => (
                                 <option key={group} value={group}>{group}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <label htmlFor="playoff-round-filter" className="text-sm font-semibold" style={{ color: "#4A3728" }}>
+                              Playoff Round:
+                            </label>
+                            <select
+                              id="playoff-round-filter"
+                              value={selectedPlayoffRound}
+                              onChange={(e) => setSelectedPlayoffRound(e.target.value)}
+                              className="px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2"
+                              style={{
+                                border: "1px solid #C8BFA8",
+                                backgroundColor: "#F5F0E8",
+                                color: "#4A3728",
+                              }}
+                            >
+                              <option value="all">All Rounds</option>
+                              {playoffRounds.map((round) => (
+                                <option key={round} value={round}>{round}</option>
                               ))}
                             </select>
                           </div>
@@ -432,7 +480,9 @@ export default function BracketPage() {
                                 className="text-xs px-2 py-1 rounded"
                                 style={{ color: "#4A3728", backgroundColor: "#E0D8CC" }}
                               >
-                                {game.group_name || 'Group Unknown'}
+                                {game.bracket_name && playoffRounds.includes(game.bracket_name)
+                                  ? game.bracket_name
+                                  : game.group_name || 'Group Unknown'}
                               </span>
                             </div>
                           </div>
@@ -446,6 +496,10 @@ export default function BracketPage() {
 
             {activeTab === "Standings" && (
               <div className="space-y-8">
+                <div className="rounded-lg px-4 py-3 text-sm" style={{ backgroundColor: "#E4EDE4", border: "1px solid #B0C8B0", color: "#2A4A2A" }}>
+                  <span className="mr-2 font-bold">★ Playoff qualifier</span>
+                  The top three teams in each group advance to the playoffs.
+                </div>
                 {loading ? (
                   <p className="text-center" style={{ color: "#8C7355" }}>Loading standings...</p>
                 ) : Object.keys(groupedStandings).length === 0 ? (
@@ -472,11 +526,11 @@ export default function BracketPage() {
                                 key={team.team_id}
                                 style={{
                                   borderBottom: "1px solid #D4CABC",
-                                  backgroundColor: team.rank === 1 ? "#F0EAD0" : "transparent"
+                                  backgroundColor: team.rank <= 3 ? "#E4EDE4" : "transparent"
                                 }}
                               >
                                 <td className="py-3 px-3 font-medium" style={{ color: "#4A3728" }}>
-                                  {team.rank === 1 && <span className="mr-1" style={{ color: "#C8A84B" }}>★</span>}
+                                  {team.rank <= 3 && <span className="mr-1" style={{ color: "#5A8A5A" }}>★</span>}
                                   {team.team_name}
                                 </td>
                                 <td className="py-3 px-3 text-center font-bold" style={{ color: "#5A8A5A" }}>{team.wins}</td>
@@ -572,8 +626,8 @@ export default function BracketPage() {
                                     {game ? (
                                       <div className="space-y-1.5">
                                         {[
-                                          { id: game.team1_id, name: game.team1_name || friendlyFeeder(structure.feeder1), score: game.score1 },
-                                          { id: game.team2_id, name: game.team2_name || friendlyFeeder(structure.feeder2), score: game.score2 },
+                                          { id: game.team1_id, name: game.team1_name || feederLabel(structure.feeder1), score: game.score1 },
+                                          { id: game.team2_id, name: game.team2_name || feederLabel(structure.feeder2), score: game.score2 },
                                         ].map((team, index) => {
                                           const isWinner = winningTeamId === team.id;
                                           return (
@@ -597,10 +651,10 @@ export default function BracketPage() {
                                     ) : (
                                       <div className="space-y-2">
                                         <p className="rounded px-2 py-1.5 text-xs" style={{ backgroundColor: "#EAE4D8", color: "#4A3728" }}>
-                                          {friendlyFeeder(structure.feeder1)}
+                                          {feederLabel(structure.feeder1)}
                                         </p>
                                         <p className="rounded px-2 py-1.5 text-xs" style={{ backgroundColor: "#EAE4D8", color: "#4A3728" }}>
-                                          {friendlyFeeder(structure.feeder2)}
+                                          {feederLabel(structure.feeder2)}
                                         </p>
                                       </div>
                                     )}
