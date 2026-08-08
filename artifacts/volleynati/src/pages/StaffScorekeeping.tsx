@@ -21,17 +21,17 @@ interface Game {
   updated_at: string;
   group_name: string | null;
   bracket_name: string | null;
+  court: string | null;
 }
 
 export default function ScorekeepingPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<string>("all");
-  const [selectedPlayoffRound, setSelectedPlayoffRound] = useState<string>("all");
-  const [availableGroups, setAvailableGroups] = useState<string[]>([]);
+  const [selectedGameSection, setSelectedGameSection] = useState<string>("Group A");
   const [, setLocation] = useLocation();
   const playoffRounds = ["Play-In", "Quarterfinal", "Semifinal", "Final"];
+  const gameSections = ["Group A", "Group B", "Group C", "Group D", "Playoffs"];
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -71,15 +71,11 @@ export default function ScorekeepingPage() {
   };
 
   useEffect(() => {
-    let filtered = [...games];
-    if (selectedGroup !== "all") {
-      filtered = filtered.filter(game => game.group_name === selectedGroup);
-    }
-    if (selectedPlayoffRound !== "all") {
-      filtered = filtered.filter(game => game.bracket_name === selectedPlayoffRound);
-    }
+    const filtered = selectedGameSection === "Playoffs"
+      ? games.filter(game => game.bracket_name !== null && playoffRounds.includes(game.bracket_name))
+      : games.filter(game => game.group_name === selectedGameSection);
     setFilteredGames(filtered);
-  }, [games, selectedGroup, selectedPlayoffRound]);
+  }, [games, selectedGameSection]);
 
   const fetchGames = useCallback(async () => {
     if (!supabase) return;
@@ -91,8 +87,6 @@ export default function ScorekeepingPage() {
       }
       const transformedGames = transformGamesData(data || []);
       setGames(transformedGames);
-      const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
-      setAvailableGroups(groups);
     } catch {
       console.error('Error fetching games: Unknown error');
     } finally {
@@ -164,34 +158,17 @@ export default function ScorekeepingPage() {
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3">
-              <label htmlFor="group-filter" className="text-sm font-semibold text-blue-900">
-                Filter by Group:
+              <label htmlFor="game-section-filter" className="text-sm font-semibold text-blue-900">
+                Show:
               </label>
               <select
-                id="group-filter"
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
+                id="game-section-filter"
+                value={selectedGameSection}
+                onChange={(e) => setSelectedGameSection(e.target.value)}
                 className="px-4 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
               >
-                <option value="all">All Groups</option>
-                {availableGroups.map((group) => (
-                  <option key={group} value={group}>{group}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-3">
-              <label htmlFor="playoff-round-filter" className="text-sm font-semibold text-blue-900">
-                Playoff Round:
-              </label>
-              <select
-                id="playoff-round-filter"
-                value={selectedPlayoffRound}
-                onChange={(e) => setSelectedPlayoffRound(e.target.value)}
-                className="px-4 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
-              >
-                <option value="all">All Rounds</option>
-                {playoffRounds.map((round) => (
-                  <option key={round} value={round}>{round}</option>
+                {gameSections.map((section) => (
+                  <option key={section} value={section}>{section}</option>
                 ))}
               </select>
             </div>
@@ -204,11 +181,9 @@ export default function ScorekeepingPage() {
         {filteredGames.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">
-              {selectedGroup !== "all"
-                ? `No games found in ${selectedGroup}`
-                : selectedPlayoffRound !== "all"
-                  ? `No games found in the ${selectedPlayoffRound}`
-                  : "No games found"}
+              {selectedGameSection === "Playoffs"
+                ? "No playoff games found"
+                : `No games found in ${selectedGameSection}`}
             </p>
           </div>
         ) : (
@@ -235,10 +210,15 @@ export default function ScorekeepingPage() {
                     </span>
                   </div>
 
-                  <div className="mb-4">
+                  <div className="mb-4 flex flex-wrap gap-2">
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       {game.game_type}
                     </span>
+                    {game.court && (
+                      <span className="text-xs text-green-800 bg-green-100 px-2 py-1 rounded">
+                        {game.court}
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-4">

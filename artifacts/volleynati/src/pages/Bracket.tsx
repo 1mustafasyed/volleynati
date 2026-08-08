@@ -19,6 +19,8 @@ interface Game {
   bracket_name: string | null;
   group_name: string | null;
   playoff_slot: string | null;
+  bracket_sort_order: number | null;
+  court: string | null;
   updated_by: string | null;
   updated_at: string;
 }
@@ -51,9 +53,7 @@ export default function BracketPage() {
   const [standings, setStandings] = useState<TeamStanding[]>([]);
   const [playoffStructure, setPlayoffStructure] = useState<PlayoffStructure[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<string>("all");
-  const [selectedPlayoffRound, setSelectedPlayoffRound] = useState<string>("all");
-  const [availableGroups, setAvailableGroups] = useState<string[]>([]);
+  const [selectedGameSection, setSelectedGameSection] = useState<string>("Group A");
 
   const tabs = [
     { id: "Games", label: "Games" },
@@ -71,6 +71,7 @@ export default function BracketPage() {
   })();
 
   const playoffRounds = ["Play-In", "Quarterfinal", "Semifinal", "Final"];
+  const gameSections = ["Group A", "Group B", "Group C", "Group D", "Playoffs"];
 
   const formatStartTime = (timestamp: string) => {
     try {
@@ -121,16 +122,12 @@ export default function BracketPage() {
   }, []);
 
   useEffect(() => {
-    let filtered = [...games];
-    if (selectedGroup !== "all") {
-      filtered = filtered.filter(game => game.group_name === selectedGroup);
-    }
-    if (selectedPlayoffRound !== "all") {
-      filtered = filtered.filter(game => game.bracket_name === selectedPlayoffRound);
-    }
+    const filtered = selectedGameSection === "Playoffs"
+      ? games.filter(game => game.bracket_name !== null && playoffRounds.includes(game.bracket_name))
+      : games.filter(game => game.group_name === selectedGameSection);
     const sortedFilteredGames = sortGamesByTime(filtered);
     setFilteredGames(sortedFilteredGames);
-  }, [games, selectedGroup, selectedPlayoffRound, sortGamesByTime]);
+  }, [games, selectedGameSection, sortGamesByTime]);
 
   // Fetch standings from the group_standings database function
   const fetchStandings = useCallback(async () => {
@@ -162,8 +159,6 @@ export default function BracketPage() {
 
       const transformedGames = transformGamesData((data || []) as Game[]);
       setGames(transformedGames);
-      const groups = [...new Set(transformedGames.map(game => game.group_name).filter((name): name is string => Boolean(name)))].sort();
-      setAvailableGroups(groups);
     } catch (error) {
       console.error('Error fetching games:', error);
     } finally {
@@ -382,17 +377,17 @@ export default function BracketPage() {
                     </div>
                   ) : (
                     <div>
-                      {/* Group and playoff-round filters */}
+                       {/* Group-stage or playoff game filter */}
                       <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: "#E0D8CC", border: "1px solid #C8BFA8" }}>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                           <div className="flex items-center gap-3">
-                            <label htmlFor="group-filter" className="text-sm font-semibold" style={{ color: "#4A3728" }}>
-                              Filter by Group:
+                             <label htmlFor="game-section-filter" className="text-sm font-semibold" style={{ color: "#4A3728" }}>
+                               Show:
                             </label>
                             <select
-                              id="group-filter"
-                              value={selectedGroup}
-                              onChange={(e) => setSelectedGroup(e.target.value)}
+                               id="game-section-filter"
+                               value={selectedGameSection}
+                               onChange={(e) => setSelectedGameSection(e.target.value)}
                               className="px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2"
                               style={{
                                 border: "1px solid #C8BFA8",
@@ -400,30 +395,8 @@ export default function BracketPage() {
                                 color: "#4A3728",
                               }}
                             >
-                              <option value="all">All Groups</option>
-                              {availableGroups.map((group) => (
-                                <option key={group} value={group}>{group}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <label htmlFor="playoff-round-filter" className="text-sm font-semibold" style={{ color: "#4A3728" }}>
-                              Playoff Round:
-                            </label>
-                            <select
-                              id="playoff-round-filter"
-                              value={selectedPlayoffRound}
-                              onChange={(e) => setSelectedPlayoffRound(e.target.value)}
-                              className="px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2"
-                              style={{
-                                border: "1px solid #C8BFA8",
-                                backgroundColor: "#F5F0E8",
-                                color: "#4A3728",
-                              }}
-                            >
-                              <option value="all">All Rounds</option>
-                              {playoffRounds.map((round) => (
-                                <option key={round} value={round}>{round}</option>
+                               {gameSections.map((section) => (
+                                 <option key={section} value={section}>{section}</option>
                               ))}
                             </select>
                           </div>
@@ -476,14 +449,21 @@ export default function BracketPage() {
                             </div>
 
                             <div className="mt-3 pt-3" style={{ borderTop: "1px solid #C8BFA8" }}>
-                              <span
-                                className="text-xs px-2 py-1 rounded"
-                                style={{ color: "#4A3728", backgroundColor: "#E0D8CC" }}
-                              >
-                                {game.bracket_name && playoffRounds.includes(game.bracket_name)
-                                  ? game.bracket_name
-                                  : game.group_name || 'Group Unknown'}
-                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                <span
+                                  className="text-xs px-2 py-1 rounded"
+                                  style={{ color: "#4A3728", backgroundColor: "#E0D8CC" }}
+                                >
+                                  {game.bracket_name && playoffRounds.includes(game.bracket_name)
+                                    ? game.bracket_name
+                                    : game.group_name || 'Group Unknown'}
+                                </span>
+                                {game.court && (
+                                  <span className="text-xs px-2 py-1 rounded" style={{ color: "#2A4A2A", backgroundColor: "#E4EDE4" }}>
+                                    {game.court}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -604,9 +584,16 @@ export default function BracketPage() {
                                     style={{ backgroundColor: "#F5F0E8", border: "1px solid #C8BFA8" }}
                                   >
                                     <div className="mb-2 flex items-center justify-between gap-2">
-                                      <span className="text-xs font-bold tracking-[0.08em]" style={{ color: "#8C7355" }}>
-                                        {structure.slot}
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold tracking-[0.08em]" style={{ color: "#8C7355" }}>
+                                          {structure.slot}
+                                        </span>
+                                        {game?.court && (
+                                          <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold" style={{ color: "#2A4A2A", backgroundColor: "#E4EDE4" }}>
+                                            {game.court}
+                                          </span>
+                                        )}
+                                      </div>
                                       {game ? (
                                         <span
                                           className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
